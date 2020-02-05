@@ -1,0 +1,74 @@
+
+See Examples.cpp (make examples; ./examples to compile it and run) for examples on how to make splines, solve ODEs, etc.
+and the functionality of the stuff supplied with this template
+
+The code runs from Main.cpp. See this file for the order of things to implement.
+
+Compile the code running ( make )
+
+If you want to compile this on your computer you need to install the GSL library first. See below for instructions.
+
+In the last module you will also need a library for Bessel functions (the GSL one often fails for very large inputs), if 
+COMPLEX_BESSEL is defined in the makefile then you will have to have this library installed:
+
+  https://github.com/joeydumont/complex_bessel
+
+If you don't have this then just comment out the two lines below ( "Add bessel function library" ) in the Makefile
+
+===================================================
+INSTALL GSL LOCALLY:
+===================================================
+
+Run the following commands in order:
+
+# Go the the home directory
+cd $HOME
+
+# Make a local folder to hold libraries
+mkdir local
+
+# Enter this directory
+cd local
+
+# Download the code (if you don't have wget you need to get the file to this dir by other means)
+wget ftp://ftp.gnu.org/gnu/gsl/gsl-2.6.tar.gz
+
+# Unzip the code
+tar -xvf gsl-2.6.tar.gz
+
+# You should now have the gsl-2.6 folder. Enter it
+cd gsl-2.6
+
+# Run the configure script
+./configure --prefix=$HOME/local
+
+# Compile and install it
+make ; make install
+
+In the CMB code Makefile change the include and lib paths to:
+    INC  = -I$(HOME)/local/include
+    LIBS = -L$(HOME)/local/lib -lgsl -lgslcblas
+
+Now try to compile by running make and run the code as
+  ./cmb
+
+If this fails with "libgsl.so not found" then run the command
+  export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/local/lib"
+
+and try to run ./cmb again and it should work. To avoid having
+to run this command every time you open a new terminal open
+the $HOME/.bashrc file and add this line to the end of the file
+and it will load everytime you open a new window
+
+===================================================
+
+===================================================
+INSTALL COMPLEX BESSEL LOCALLY:
+===================================================
+cd $HOME
+mkdir local
+cd local
+git clone https://github.com/joeydumont/complex_bessel
+cd complex_bessel
+See the README.md file for how to proceed
+
