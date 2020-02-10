@@ -1,0 +1,105 @@
+\documentclass[onecolumn]{aastex62}
+
+
+\newcommand{\vdag}{(v)^\dagger}
+\newcommand\aastex{AAS\TeX}
+\newcommand\latex{La\TeX}
+\usepackage{amsmath}
+\usepackage{physics}
+\usepackage{hyperref}
+\usepackage{natbib}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+
+\begin{document}
+
+\title{\Large Milestone I:\\Computing the Hubble parameter and conformal time.}
+
+
+
+
+
+\author{Håkon Tansem}
+
+
+
+\section{Introduction} \label{sec:intro}
+Milestone I is the first part of a project consisting of four Milestones. The
+main goal of the project is to calculate the CMB power spectrum. In
+Milestone I, we will study the background evolution of the universe. To do this
+we will compute the Hubble parameter from early times to today as
+to describe the expansion history of the universe. We will also study the
+evolution of the density parameters for baryons, cold dark matter, photons and
+cosmological constant as well as the conformal time.
+ 
+\section{Method} \label{sec:method}
+When calculating the conformal time we start with the differential equation
+\begin{equation}
+    \frac{d\eta}{dt} = \frac{c}{a},
+\end{equation}
+where $\eta$ is the conformal time, $c$ is the speed of light, $a$ is the scale
+factor and $t$ is time. By performing a change of variables by multiplying with
+$\frac{dx}{dx}$ we get
+\begin{equation}
+    \frac{d\eta}{dx}\frac{dx}{dt} = \frac{c}{a},
+\end{equation}
+where we introduce the coordinate change $x=log(a)$. Using that
+$\frac{dx}{dt}=H$ (\cite{callin2006calculate}), where $H$ is the hubble paramater, we get an expression for $\eta$
+\begin{equation}\label{eq:eta_of_x}
+    \eta = \int_{0}^{x}\frac{c}{\mathcal{H}(x)}dx,
+\end{equation}
+where $\mathcal{H}(x)=e^xH(x)$ in our new coordinate system. The next step is to
+derive an expression for $H(x)$. By neglecting density parameters for neutrinos
+and curvature, we have and expression for the Hubble parameter given by
+\begin{equation}\label{eq:H_of_x}
+    H(x) = H_0\sqrt{(\Omega_{b,0} + \Omega_{CDM,0})e^{-3x} + \Omega_{r,0} e^{-4x} + \Omega_{\Lambda,0}}
+\end{equation} 
+(\cite{Winther:2020}), where $\Omega_{b,0}$ is the density parameter for baryons,
+$\Omega_{CDM,0}$ is for cold dark matter, $\Omega_{r,0}$ is for radiation and
+$\Omega_{\Lambda,0}$ is for cosmological constant. The sub index $0$ represents
+the value for the parameters today. The values for the density parameters today
+are given as follows
+\begin{align}
+    \Omega_{CDM,0} &=0.25\\
+    \Omega_{b,0} &=0.05\\
+    \Omega_{\Lambda,0} &=0.7\\
+\end{align}
+Respectively. The parameter for radiation today is given as 
+\begin{equation}
+    \Omega_{r,0} =2\frac{\pi^2(k_bT_{cmb}^4)}{30\hbar^3c^5}\frac{8\pi G}{3H_0^2},
+\end{equation}
+where $G$ is the gravitational constant, $H_0$ is the Hubble parameter today and
+$T_{cmb} =2.7255$K is the temperature of the CMB measured today (\cite{Winther:2020}).
+ 
+
+We also want to study how the density parameters evolve with time. For the density parameters, we
+have that 
+\begin{align}
+    \Omega_i &= \frac{\rho_i}{\rho_{c}} \\
+             &= \frac{8\pi G}{3H(x)^2}\rho_i\\
+             &= \frac{8\pi G}{3H(x)^2}\rho_{i,0}e^{-3x(1+w_i)},
+\end{align}
+where $\rho_{i,0}$ is the critical density
+today and $w$ is the equation of state parameter defined as $w_i\equiv\frac{P_i}{\rho_i}$, where $P_i$ is pressure and
+$\rho_i$ is density for a given contribution to energy component $i$ (Spør om
+dette). By using the relation $\rho_{i,0} = \rho_{c,0}\Omega_{i,0}$, we get the
+expression for a given density parameter as 
+\begin{equation}
+    \Omega_i(x)=\frac{H_0^2}{H(x)^2}e^{-3x(1+w_i)}\Omega_{i,0}.
+\end{equation}
+Using that $w_{CDM} = 0$, $w_{b} = 0$, $w_{\Lambda} = -1$ and $w_{r} = 1/3$
+(\cite{Winther:2020}) we can get calculate the density parameters for a given
+$x$ allowing us to evaluate the Hubble parameter given by equation
+(\ref{eq:H_of_x}) for a given x. This allows us to finally calculate the
+integral for $\eta$ given by equation (\ref{eq:eta_of_x}).
+\section{Results} \label{sec:results}
+
+
+\bibliography{ref.bib}
+\bibliographystyle{aasjournal}
+%\begin{thebibliography}{}
+%\end{thebibliography}
+\end{document}
+
+% End of file `sample62.tex'.
