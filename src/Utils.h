@@ -42,8 +42,9 @@ extern struct ConstantsAndUnits {
   const double epsilon_0   = 13.605693122994 * eV;	      // Ionization energy for the ground state of hydrogen
   const double xhi0        = 24.587387 * eV;			        // Ionization energy for neutral Helium
   const double xhi1        = 4.0 * epsilon_0;		          // Ionization energy for singly ionized Helium
-  
-  // Min and max k-value
+  const double rhoc0       = 1e-26;                       // Critical density of the universe today in kg/m3
+
+  // Min and max k-value 
   const double k_min = 0.00005 / Mpc;
   const double k_max = 0.3     / Mpc;
   
