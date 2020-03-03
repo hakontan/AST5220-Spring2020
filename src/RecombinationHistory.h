@@ -61,6 +61,7 @@ class RecombinationHistory{
         BackgroundCosmology *cosmo, 
         double Yp);
 
+    
     // Do all the solving
     void solve();
     
