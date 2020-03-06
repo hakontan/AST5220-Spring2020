@@ -29,7 +29,6 @@ BackgroundCosmology::BackgroundCosmology(
   H0 = Constants.H0_over_h * h; // s^-1
   OmegaR = 8 * Constants.G * std::pow(M_PI, 3) * std::pow(Constants.k_b * TCMB, 4)
                   / (45 * H0 * H0 * std::pow(Constants.hbar, 3) * std::pow(Constants.c, 5));
-  std::cout << OmegaR << " " << H0 << std::endl;
   double OmegaNu = 0.0;
   double OmegaK = 0.0;
 }
@@ -52,7 +51,7 @@ void BackgroundCosmology::solve(){
 
   Vector x_array = Utils::linspace(x_start, x_end, npts);
   Vector eta(npts);
-  //std::cout << "vectors created" << std::endl;
+  
   // The ODE for deta/dx
   ODEFunction detadx = [&](double x, const double *eta, double *detadx){
     //std::cout << "entered ODE function detadx" << std::endl;
@@ -62,9 +61,7 @@ void BackgroundCosmology::solve(){
     //...
     //...
     
-    //detadx[0] = 0.0;
     detadx[0] = Constants.c / Hp_of_x(x);
-    //std::cout << "RHS set" << std::endl;
     return GSL_SUCCESS;
   };
 
@@ -79,17 +76,15 @@ void BackgroundCosmology::solve(){
   
   ODESolver ode;
   Vector eta_ic{0.0}; // initial conitions for eta
-  //std::cout << "ODE solver called" << std::endl;
   ode.solve(detadx, x_array, eta_ic);
-  //std::cout << "ODE solved" << std::endl;
   auto all_data = ode.get_data();
 
   for (int i = 0; i<npts; i++) {
     eta[i] = all_data[i][0];
   }
-  //std::cout << "Eta array created" << std::endl;
+  
   eta_of_x_spline.create(x_array, eta, "Test Spline");
-  //std::cout << "Spline created" << std::endl;
+
   Utils::EndTiming("Eta");
 }
 
@@ -280,7 +275,7 @@ void BackgroundCosmology::output(const std::string filename) const{
     fp << x                  << " ";
     fp << eta_of_x(x)        << " ";
     fp << Hp_of_x(x)         << " ";
-    fp << H_of_x(x)          << " ";  
+    fp << H_of_x(x)          << " ";
     fp << dHpdx_of_x(x)      << " ";
     fp << get_OmegaB(x)      << " ";
     fp << get_OmegaCDM(x)    << " ";
