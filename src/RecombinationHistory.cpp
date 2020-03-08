@@ -41,6 +41,7 @@ void RecombinationHistory::solve_number_density_electrons(){
   double a;
   double n_b;
   const double OmegaB_0 = cosmo->get_OmegaB(0);
+  bool finished = false;
 
   // Calculate recombination history
   bool saha_regime = true;
@@ -85,7 +86,8 @@ void RecombinationHistory::solve_number_density_electrons(){
       // The Peebles ODE equation
       ODESolver peebles_Xe_ode;
       ODEFunction dXedx = [&](double x, const double *Xe, double *dXedx){
-        return rhs_peebles_ode(x, Xe, dXedx);
+        dXedx[0] = rhs_peebles_ode(x, Xe, dXedx); //return rhs_peebles_ode(x, Xe, dXedx);
+        return GSL_SUCCESS;
       };
       
       //=============================================================================
@@ -93,22 +95,32 @@ void RecombinationHistory::solve_number_density_electrons(){
       //=============================================================================
       //...
       //...
+      //Solving the Peebles ODE from the transition between Saha untill today
       Vector peeblesIC{std::exp(log_Xe_arr[i-1])};
-      Vector peebles_interval{x_array[i-1], x_array[i]};// = Utils::linspace(x_array[i-1], x_array[i], 100);
-
-      peebles_Xe_ode.solve(dXedx, peebles_interval, peeblesIC, gsl_odeiv2_step_rk4);
+    
+      Vector peebles_interval = Utils::linspace(x_array[i], x_array[npts_rec_arrays-1], npts_rec_arrays-i + 1);
+      peebles_Xe_ode.set_verbose(true);
+      peebles_Xe_ode.solve(dXedx, peebles_interval, peeblesIC, gsl_odeiv2_step_rkf45);
       auto Xe_res = peebles_Xe_ode.get_data_by_component(0);
-     
+      double Xe_res_peebles;
+      std::cout << i << std::endl;
 
-      //updating Xe array
-      Xe_current_peebles = Xe_res[99];
-      log_Xe_arr[i] = std::log(Xe_current_peebles);
 
-      //Updating ne array
-      a = std::exp(x_array[i]);
-      n_b = OmegaB_0 * Constants.rhoc0 / (Constants.m_H * a * a * a);
-      log_ne_arr[i] = std::log(n_b * Xe_current_peebles);
-      std::cout << "x: " << x_array[i] << " Xe: " << Xe_current_peebles << " ne_current: " << n_b * Xe_current_peebles << std::endl;
+      //updating Xe and ne arrays
+      for (int k=0; k<npts_rec_arrays-i; k++) {
+        a = std::exp(x_array[k+i]);
+        n_b = OmegaB_0 * Constants.rhoc0 / (Constants.m_H * a * a * a);
+        Xe_current_peebles = Xe_res[k];
+        log_Xe_arr[k+i] = std::log(Xe_current_peebles);
+        log_ne_arr[k+i] = std::log(n_b * Xe_current_peebles);
+       // std::cout << "x: " << x_array[k+i] << " Xe: " << Xe_res[k] << " ne_current: " << n_b * Xe_current_peebles << std::endl;
+      
+      }
+      finished = true;
+    }
+    //Break the loop when Peebles equation is solved from onset untill today
+    if(finished){
+      break;
     }
   }
 
