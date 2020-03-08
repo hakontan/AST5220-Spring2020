@@ -37,6 +37,10 @@ void RecombinationHistory::solve_number_density_electrons(){
   Vector x_array = Utils::linspace(x_start, x_end, npts_rec_arrays);
   Vector log_Xe_arr(npts_rec_arrays);
   Vector log_ne_arr(npts_rec_arrays);
+  double Xe_current_peebles;
+  double a;
+  double n_b;
+  const double OmegaB_0 = cosmo->get_OmegaB(0);
 
   // Calculate recombination history
   bool saha_regime = true;
@@ -89,11 +93,22 @@ void RecombinationHistory::solve_number_density_electrons(){
       //=============================================================================
       //...
       //...
-      Vector peeblesIC{Xe_current};
-      peebles_Xe_ode.solve(dXedx, x_array, peeblesIC);
+      Vector peeblesIC{std::exp(log_Xe_arr[i-1])};
+      Vector peebles_interval{x_array[i-1], x_array[i]};// = Utils::linspace(x_array[i-1], x_array[i], 100);
+
+      peebles_Xe_ode.solve(dXedx, peebles_interval, peeblesIC, gsl_odeiv2_step_rk4);
       auto Xe_res = peebles_Xe_ode.get_data_by_component(0);
-      std::cout << "x: " << x_array[i] << " Xe: " << Xe_res[sizeof(Xe_res)-1] << " ne_current: " << ne_current << std::endl;
-      log_Xe_arr[i] = std::log(Xe_res[sizeof(Xe_res)-1]);
+     
+
+      //updating Xe array
+      Xe_current_peebles = Xe_res[99];
+      log_Xe_arr[i] = std::log(Xe_current_peebles);
+
+      //Updating ne array
+      a = std::exp(x_array[i]);
+      n_b = OmegaB_0 * Constants.rhoc0 / (Constants.m_H * a * a * a);
+      log_ne_arr[i] = std::log(n_b * Xe_current_peebles);
+      std::cout << "x: " << x_array[i] << " Xe: " << Xe_current_peebles << " ne_current: " << n_b * Xe_current_peebles << std::endl;
     }
   }
 
@@ -103,13 +118,10 @@ void RecombinationHistory::solve_number_density_electrons(){
   //=============================================================================
   //...
   //...
-  log_Xe_of_x_spline.create(x_array, log_Xe_arr, "log Xe Spline");
-  /*
-  for (int i=0; i<npts_rec_arrays;i++){
-    std::cout << Xe_of_x(i) << "\n"
-              << ne_of_x(i) << std::endl; 
-  }
-  */
+  log_Xe_of_x_spline.create(x_array, log_Xe_arr, "log_Xe_Spline");
+  log_ne_of_x_spline.create(x_array, log_ne_arr, "log_ne_Spline");
+
+
   Utils::EndTiming("Xe");
 }
 
@@ -163,7 +175,7 @@ std::pair<double,double> RecombinationHistory::electron_fraction_from_saha_equat
 // The right hand side of the dXedx Peebles ODE
 //====================================================
 int RecombinationHistory::rhs_peebles_ode(double x, const double *Xe, double *dXedx){
-  //std::cout << "peebles" << std::endl;
+
   // Current value of a and X_e
   const double X_e         = Xe[0];
   const double a           = exp(x);
@@ -199,7 +211,9 @@ int RecombinationHistory::rhs_peebles_ode(double x, const double *Xe, double *dX
   
   double factor_beta2 = 3 * epsilon_0 * a / (4 * 2.725 * k_b);
   double beta2;
-  if (factor_beta2 < 199) {
+
+  //Avoiding numerical error due to exponent becoming too large
+  if (factor_beta2 < 199.0) {
     beta2 = beta1 * std::exp(factor_beta2);
   }
   else {
@@ -355,9 +369,7 @@ double RecombinationHistory::ne_of_x(double x) const{
   //=============================================================================
   //...
   //...
-  const double a = std::exp(x);
-  const double n_b = cosmo->get_OmegaB(0) * Constants.rhoc0 / (Constants.m_H * a * a * a);
-  return Xe_of_x(x) * n_b;
+  return std::exp(log_ne_of_x_spline(x));
 }
 
 double RecombinationHistory::get_Yp() const{
