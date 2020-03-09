@@ -68,7 +68,6 @@ void RecombinationHistory::solve_number_density_electrons(){
       //...
       //...
       
-      std::cout << "x: " << x_array[i] << " Xe_current: " << Xe_current << " ne_current: " << ne_current << std::endl;
       log_Xe_arr[i] = std::log(Xe_current);
       log_ne_arr[i] = std::log(ne_current);
 
@@ -100,7 +99,7 @@ void RecombinationHistory::solve_number_density_electrons(){
       Vector peeblesIC{Xe_current};
     
       Vector peebles_interval = Utils::linspace(x_array[i], x_array[npts_rec_arrays-1], npts_rec_arrays-i + 1);
-      peebles_Xe_ode.set_verbose(true);
+      
       peebles_Xe_ode.solve(dXedx, peebles_interval, peeblesIC, gsl_odeiv2_step_rkf45);
       auto Xe_res = peebles_Xe_ode.get_data_by_component(0);
       double Xe_res_peebles;
@@ -113,8 +112,6 @@ void RecombinationHistory::solve_number_density_electrons(){
         Xe_current_peebles = Xe_res[k];
         log_Xe_arr[k+i] = std::log(Xe_current_peebles);
         log_ne_arr[k+i] = std::log(n_b * Xe_current_peebles);
-        //std::cout << "x: " << x_array[k+i] << " Xe: " << Xe_res[k] << " ne_current: " << n_b * Xe_current_peebles << std::endl;
-      
       }
       finished = true;
     }
@@ -156,14 +153,14 @@ std::pair<double,double> RecombinationHistory::electron_fraction_from_saha_equat
   const double OmegaB      = cosmo->get_OmegaB(0);
  
 
- 
+
   double n_b = OmegaB * rhoc0 / (m_H * a * a * a);
   double F = std::pow(k_b * m_e * 2.725 / (2 * M_PI * a), 3.0/2) * std::exp(-epsilon_0 * a / (2.725 * k_b)) 
              / (n_b * hbar * hbar * hbar);
   // Electron fraction and number density
   double Xe;
   
-  if (F > 1e6) {
+  if (F > 1e5) {
     Xe = 1;
   }
   else {
@@ -218,7 +215,7 @@ int RecombinationHistory::rhs_peebles_ode(double x, const double *Xe, double *dX
   double alpha = std::sqrt(sigma_T * 3 / (8 * M_PI)) * m_e * c / hbar;
   double alpha2 = (64 * M_PI / std::sqrt(27 * M_PI)) * (alpha * alpha / (m_e * m_e))
                   * std::sqrt(epsilon_0 / T_b) * phi2
-                  * std::pow(k_b, -0.5) * hbar * hbar / c;
+                  * hbar * hbar / c;
 
   double beta1 = alpha2 * std::pow(2.725 * m_e / (2 * M_PI * a), 3.0 / 2) * std::exp(-epsilon_0 / T_b)
                  * std::pow(k_b, 3.0/2) /(hbar * hbar * hbar);
@@ -236,17 +233,11 @@ int RecombinationHistory::rhs_peebles_ode(double x, const double *Xe, double *dX
 
   double Cr = (lambda_2s1s + lambda_alpha) / (lambda_2s1s + lambda_alpha + beta2);
   
-  // Cosmological parameters
-  // const double OmegaB      = cosmo->get_OmegaB();
-  // ...
-  // ...
+  //=============================================================================
+  // Write the expression for dXedx
+  //=============================================================================
 
-  //=============================================================================
-  // TODO: Write the expression for dXedx
-  //=============================================================================
-  //...
-  //...
-  
+
   dXedx[0] = Cr * (beta1 * (1.0 - *Xe) - n_b * alpha2 * *Xe * *Xe) / cosmo->H_of_x(x);
   //std::cout << dXedx[0] << std::endl;
   return GSL_SUCCESS;
@@ -270,42 +261,38 @@ void RecombinationHistory::solve_for_optical_depth_tau(){
   ODEFunction dtaudx = [&](double x, const double *tau, double *dtaudx){
 
     //=============================================================================
-    // TODO: Write the expression for dtaudx
-    //=============================================================================
-    //...
-    //...
-
     // Set the derivative for photon optical depth
+    //=============================================================================
+
     
     dtaudx[0] = - Constants.c * Constants.sigma_T * ne_of_x(x) / cosmo->H_of_x(x);
-
     return GSL_SUCCESS;
   };
 
   //=============================================================================
-  // TODO: Set up and solve the ODE and make tau splines
+  // Set up and solve the ODE and make tau splines
   //=============================================================================
-  //...
-  //...
-  ODESolver tau_ode;
-  Vector tau_ic{0.0};
-  tau_ode.solve(dtaudx, x_array, tau_ic, gsl_odeiv2_step_rkf45);
   
+  ODESolver tau_ode;
+  Vector tau_ic{1e5};
+  tau_ode.solve(dtaudx, x_array, tau_ic, gsl_odeiv2_step_rkf45);
+
   auto tau_data = tau_ode.get_data_by_component(0);
 
   for (int i = 0; i<npts; i++) {
-    tau[i] = tau_data[i] - tau_data[npts];
+    tau[i] = tau_data[i] - tau_data[npts - 1];
+
   }
   
-  tau_of_x_spline.create(x_array, tau, "tau Spline");
   //=============================================================================
-  // TODO: Compute visibility functions and spline everything
+  // Compute visibility functions and spline everything
   //=============================================================================
-  //...
-  //...
+
   for (int i = 0; i<npts; i++) {
-    g[i] = - Constants.c * Constants.sigma_T * ne_of_x(x_array[i]) / cosmo->H_of_x(x_array[i]) * std::exp(-tau[i]);
+    g[i] =  std::exp(-tau[i]) * Constants.c * Constants.sigma_T * ne_of_x(x_array[i]) / cosmo->H_of_x(x_array[i]);
   }
+
+  tau_of_x_spline.create(x_array, tau, "tau Spline");
   g_tilde_of_x_spline.create(x_array, g, "g");
   Utils::EndTiming("opticaldepth");
 }

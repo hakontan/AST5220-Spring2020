@@ -24,12 +24,23 @@ ne_of_x = data[:, 2]
 tau_of_x = data[:, 3]
 dtaudx_of_x = data[:, 4]
 ddtauddx_of_x = data[:, 5]
+g_of_x = data[:, 6]
+dgdx_of_x = data[:, 7]
+ddgddx_of_x = data[:, 8]
+
 
 plt.semilogy(x, Xe_of_x)
 plt.figure()
 plt.semilogy(x, ne_of_x)
 plt.figure()
 plt.semilogy(x, tau_of_x)
-plt.semilogy(x, dtaudx_of_x)
-plt.semilogy(x, ddtauddx_of_x)
+plt.semilogy(x, np.abs(dtaudx_of_x))
+plt.semilogy(x[10: -10], ddtauddx_of_x[10:-10])
+plt.figure()
+plt.plot(x, g_of_x)
+plt.figure()
+plt.plot(x, dgdx_of_x)
+plt.figure()
+plt.plot(x, ddgddx_of_x)
 plt.show()
+
