@@ -86,8 +86,9 @@ void RecombinationHistory::solve_number_density_electrons(){
       // The Peebles ODE equation
       ODESolver peebles_Xe_ode;
       ODEFunction dXedx = [&](double x, const double *Xe, double *dXedx){
-        dXedx[0] = rhs_peebles_ode(x, Xe, dXedx); //return rhs_peebles_ode(x, Xe, dXedx);
-        return GSL_SUCCESS;
+        return rhs_peebles_ode(x, Xe, dXedx);
+        //dXedx[0] = rhs_peebles_ode(x, Xe, dXedx); //return rhs_peebles_ode(x, Xe, dXedx);
+        //return GSL_SUCCESS;
       };
       
       //=============================================================================
@@ -96,14 +97,13 @@ void RecombinationHistory::solve_number_density_electrons(){
       //...
       //...
       //Solving the Peebles ODE from the transition between Saha untill today
-      Vector peeblesIC{std::exp(log_Xe_arr[i-1])};
+      Vector peeblesIC{Xe_current};
     
       Vector peebles_interval = Utils::linspace(x_array[i], x_array[npts_rec_arrays-1], npts_rec_arrays-i + 1);
       peebles_Xe_ode.set_verbose(true);
       peebles_Xe_ode.solve(dXedx, peebles_interval, peeblesIC, gsl_odeiv2_step_rkf45);
       auto Xe_res = peebles_Xe_ode.get_data_by_component(0);
       double Xe_res_peebles;
-      std::cout << i << std::endl;
 
 
       //updating Xe and ne arrays
@@ -113,7 +113,7 @@ void RecombinationHistory::solve_number_density_electrons(){
         Xe_current_peebles = Xe_res[k];
         log_Xe_arr[k+i] = std::log(Xe_current_peebles);
         log_ne_arr[k+i] = std::log(n_b * Xe_current_peebles);
-       // std::cout << "x: " << x_array[k+i] << " Xe: " << Xe_res[k] << " ne_current: " << n_b * Xe_current_peebles << std::endl;
+        //std::cout << "x: " << x_array[k+i] << " Xe: " << Xe_res[k] << " ne_current: " << n_b * Xe_current_peebles << std::endl;
       
       }
       finished = true;
@@ -153,25 +153,24 @@ std::pair<double,double> RecombinationHistory::electron_fraction_from_saha_equat
   const double H0_over_h   = Constants.H0_over_h;
   const double rhoc0       = Constants.rhoc0;
   const double c           = Constants.c;
-
-  // Fetch cosmological parameters
   const double OmegaB      = cosmo->get_OmegaB(0);
-  //...
-  //...
+ 
+
+ 
   double n_b = OmegaB * rhoc0 / (m_H * a * a * a);
   double F = std::pow(k_b * m_e * 2.725 / (2 * M_PI * a), 3.0/2) * std::exp(-epsilon_0 * a / (2.725 * k_b)) 
              / (n_b * hbar * hbar * hbar);
   // Electron fraction and number density
   double Xe;
   
-  if (F > 5000) {
+  if (F > 1e6) {
     Xe = 1;
   }
   else {
     Xe = 0.5 * (-F + std::sqrt(F * F + 4 * F));
   }
   double ne = Xe * n_b;
-  //std::cout << "Xe: " << Xe << " F: " << F << std::endl;
+  
   //=============================================================================
   // TODO: Compute Xe and ne from the Saha equation
   //=============================================================================
@@ -212,20 +211,23 @@ int RecombinationHistory::rhs_peebles_ode(double x, const double *Xe, double *dX
   double T_b = 2.725 * k_b / a;
 
   double lambda_alpha = cosmo->H_of_x(x) * (27 * epsilon_0 * epsilon_0 * epsilon_0) 
-                        / (16 * M_PI * M_PI * n1s * c * c * c * hbar * hbar * hbar);
+                        / (64 * M_PI * M_PI * n1s * c * c * c * hbar * hbar * hbar);
 
-  double phi2 = 0.448 * k_b * k_b * std::log(epsilon_0 / T_b) * k_b / (hbar * c);
+  double phi2 = 0.448 * std::log(epsilon_0 / T_b);
 
   double alpha = std::sqrt(sigma_T * 3 / (8 * M_PI)) * m_e * c / hbar;
-  double alpha2 = (64 * M_PI / std::sqrt(27 * M_PI)) * (alpha * alpha / (m_e * m_e)) * std::sqrt(a * epsilon_0 / (2.725 * k_b)) * phi2;
+  double alpha2 = (64 * M_PI / std::sqrt(27 * M_PI)) * (alpha * alpha / (m_e * m_e))
+                  * std::sqrt(epsilon_0 / T_b) * phi2
+                  * std::pow(k_b, -0.5) * hbar * hbar / c;
 
-  double beta1 = alpha2 * std::pow(2.725 * m_e / (2 * M_PI * a), 3.0 / 2) * std::exp(-epsilon_0 / (T_b));
+  double beta1 = alpha2 * std::pow(2.725 * m_e / (2 * M_PI * a), 3.0 / 2) * std::exp(-epsilon_0 / T_b)
+                 * std::pow(k_b, 3.0/2) /(hbar * hbar * hbar);
   
-  double factor_beta2 = 3 * epsilon_0 * a / (4 * 2.725 * k_b);
+  double factor_beta2 = 3 * epsilon_0 / (4 * T_b);
   double beta2;
 
   //Avoiding numerical error due to exponent becoming too large
-  if (factor_beta2 < 199.0) {
+  if (factor_beta2 < 200.0) {
     beta2 = beta1 * std::exp(factor_beta2);
   }
   else {
@@ -245,8 +247,8 @@ int RecombinationHistory::rhs_peebles_ode(double x, const double *Xe, double *dX
   //...
   //...
   
-  dXedx[0] = Cr * (beta1 * (1.0 - *Xe) - hbar * hbar * n_b * alpha2 * *Xe * *Xe * std::pow(k_b, -1.0/2) / c) / cosmo->H_of_x(x);
-
+  dXedx[0] = Cr * (beta1 * (1.0 - *Xe) - n_b * alpha2 * *Xe * *Xe) / cosmo->H_of_x(x);
+  //std::cout << dXedx[0] << std::endl;
   return GSL_SUCCESS;
 }
 
@@ -287,11 +289,12 @@ void RecombinationHistory::solve_for_optical_depth_tau(){
   //...
   ODESolver tau_ode;
   Vector tau_ic{0.0};
-  tau_ode.solve(dtaudx, x_array, tau_ic);
-  auto tau_data = tau_ode.get_data();
+  tau_ode.solve(dtaudx, x_array, tau_ic, gsl_odeiv2_step_rkf45);
+  
+  auto tau_data = tau_ode.get_data_by_component(0);
 
   for (int i = 0; i<npts; i++) {
-    tau[i] = tau_data[i][0];
+    tau[i] = tau_data[i] - tau_data[npts];
   }
   
   tau_of_x_spline.create(x_array, tau, "tau Spline");
