@@ -1,9 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 import astropy.units as unit
 import astropy.constants as const
 
-#plt.style.use("seaborn-darkgrid")
+#plt.style.use("")
 
 fonts = {
     "font.family": "serif",
@@ -16,6 +17,7 @@ fonts = {
 
 plt.rcParams.update(fonts)
 
+save_directory = "../doc/milestoneII/figures/"
 data = np.loadtxt("recombination.txt")
 
 x = data[:, 0]
@@ -28,19 +30,49 @@ g_of_x = data[:, 6]
 dgdx_of_x = data[:, 7]
 ddgddx_of_x = data[:, 8]
 
+fig, ax = plt.subplots() 
+ax.semilogy(x, Xe_of_x)
+ax.set_xlabel(r"$x=$log$(a)$")
+ax.set_ylabel(r"$X_e$")
+ax.set_title("Free electron fraction")
+ax.grid()
+fig.savefig(save_directory + "xe.pdf", dpi=1000)
 
-plt.semilogy(x, Xe_of_x)
-plt.figure()
-plt.semilogy(x, ne_of_x)
-plt.figure()
-plt.semilogy(x, tau_of_x)
-plt.semilogy(x, np.abs(dtaudx_of_x))
-plt.semilogy(x[10: -10], ddtauddx_of_x[10:-10])
-plt.figure()
-plt.plot(x, g_of_x)
-plt.figure()
-plt.plot(x, dgdx_of_x)
-plt.figure()
-plt.plot(x, ddgddx_of_x)
+fig, ax = plt.subplots() 
+ax.semilogy(x, ne_of_x)
+ax.set_xlabel(r"$x=$log$(a)$")
+ax.set_ylabel(r"$kg/m^3$")
+ax.set_title("Free electron density")
+fig.savefig(save_directory + "ne.pdf", dpi=1000)
+
+fig, ax = plt.subplots() 
+ax.semilogy(x, tau_of_x, label=r"$\tau(x)$")
+ax.semilogy(x, np.abs(dtaudx_of_x), label=r"$\vert\frac{d \tau(x)}{dx}\vert$")
+ax.semilogy(x[10: -10], ddtauddx_of_x[10:-10], label=r"$\frac{d^2\tau(x)}{dx^2}$")
+ax.set_xlabel(r"$x=$log$(a)$")
+ax.set_title("Optical depth and derivatives")
+ax.legend()
+fig.savefig(save_directory + "tau.pdf", dpi=1000)
+
+fig, ax = plt.subplots()
+ax.plot(x, g_of_x)
+ax.set_xlabel(r"$x=$log$(a)$")
+ax.set_ylabel(r"$g(x)$")
+ax.set_title("Visibility function")
+fig.savefig(save_directory + "g.pdf", dpi=1000)
+
+fig, ax = plt.subplots()
+ax.plot(x, dgdx_of_x)
+ax.set_xlabel(r"$x=$log$(a)$")
+ax.set_ylabel(r"$\frac{dg(x)}{dx}$")
+ax.set_title("visibility function derivative")
+fig.savefig(save_directory + "dgdx.pdf", dpi=1000)
+
+fig, ax = plt.subplots()
+ax.plot(x, ddgddx_of_x)
+ax.set_xlabel(r"$x=$log$(a)$")
+ax.set_ylabel(r"$\frac{d^2g(x)}{dx^2}$")
+ax.set_title("visibility function double derivative")
+fig.savefig(save_directory + "ddgdxx.pdf", dpi=1000)
 plt.show()
 

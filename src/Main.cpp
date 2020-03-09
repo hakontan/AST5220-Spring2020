@@ -21,7 +21,7 @@ int main(int argc, char **argv){
 
   // Recombination parameters
   double Yp          = 0.24;
-
+  
   //=========================================================================
   // Module I
   //=========================================================================
@@ -36,8 +36,6 @@ int main(int argc, char **argv){
   // Output background evolution quantities
   cosmo.output("cosmology.txt");
 
-  // Remove when module is completed
-  return 0;
 
   //=========================================================================
   // Module II
