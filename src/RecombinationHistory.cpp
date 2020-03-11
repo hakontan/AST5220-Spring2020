@@ -42,6 +42,8 @@ void RecombinationHistory::solve_number_density_electrons(){
   double n_b;
   const double OmegaB_0 = cosmo->get_OmegaB(0);
   bool finished = false;
+  const double rhoc0    = 3 * cosmo->H_of_x(0) * cosmo->H_of_x(0)
+                          / (8 * M_PI * Constants.G);
 
   // Calculate recombination history
   bool saha_regime = true;
@@ -108,7 +110,7 @@ void RecombinationHistory::solve_number_density_electrons(){
       //updating Xe and ne arrays
       for (int k=0; k<npts_rec_arrays-i; k++) {
         a = std::exp(x_array[k+i]);
-        n_b = OmegaB_0 * Constants.rhoc0 / (Constants.m_H * a * a * a);
+        n_b = OmegaB_0 * rhoc0 / (Constants.m_H * a * a * a);
         Xe_current_peebles = Xe_res[k];
         log_Xe_arr[k+i] = std::log(Xe_current_peebles);
         log_ne_arr[k+i] = std::log(n_b * Xe_current_peebles);
@@ -148,9 +150,10 @@ std::pair<double,double> RecombinationHistory::electron_fraction_from_saha_equat
   const double m_H         = Constants.m_H;
   const double epsilon_0   = Constants.epsilon_0;
   const double H0_over_h   = Constants.H0_over_h;
-  const double rhoc0       = Constants.rhoc0;
   const double c           = Constants.c;
   const double OmegaB      = cosmo->get_OmegaB(0);
+  const double rhoc0       = 3 * cosmo->H_of_x(0) * cosmo->H_of_x(0)
+                            / (8 * M_PI * G);
  
 
 
@@ -198,7 +201,8 @@ int RecombinationHistory::rhs_peebles_ode(double x, const double *Xe, double *dX
   const double sigma_T     = Constants.sigma_T;
   const double lambda_2s1s = Constants.lambda_2s1s;
   const double epsilon_0   = Constants.epsilon_0;
-  const double rhoc0       = Constants.rhoc0;
+  const double rhoc0       = 3 * cosmo->H_of_x(0) * cosmo->H_of_x(0)
+                            / (8 * M_PI * Constants.G);
 
   // calculating parameters for the RHS of the peebles equation.
   const double n_b = cosmo->get_OmegaB(0) * rhoc0 / (m_H * a * a * a);
