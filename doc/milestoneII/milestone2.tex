@@ -39,7 +39,7 @@ where $H(x)$ is the Hubble parameter in our new coordinate system. The evolutio
 \begin{equation}
     n_H = n_b \approx \frac{\rho_b}{m_H} = \frac{\Omega_{b,0} \rho_{c,0}}{m_H a^3},
 \end{equation}
-where $n_b$ is the baryon density, $\rho_{c,0}$ is the critical density of the universe today, $\Omega_{b,0}$ is the density parameter for baryons today and $m_H$ is the hyodrogen mass. A relationship between the quantities $n_e$ and $n_H$ can be expressed through the free electron fraction given by $X_e\equiv\frac{n_e}{n_H}$. The free electron fraction can be solved using two equations dependent on quantities that evolve with $x=log(a)$. The first one is the Saha equation given by
+where $n_b$ is the baryon density, $\rho_{c,0}$ is the critical density of the universe today, $\Omega_{b,0}$ is the density parameter for baryons today and $m_H$ is the hyodrogen mass. A relationship between the quantities $n_e$ and $n_H$ can be expressed through the free electron fraction given by $X_e\equiv\frac{n_e}{n_H}$. This allows us to solve for $n_e$ to compute the optical depth given in equation \ref{eq:optical_depth_of_x}. The free electron fraction can be solved using two equations dependent on quantities that evolve with $x=log(a)$. The first one is the Saha equation given by
 \begin{equation}\label{eq:saha_eq}
     \frac{X_e^2}{1-X_e} = \frac{1}{n_b} \left(\frac{m_eT_b}{2\pi}\right)^{3/2} e^{-\epsilon_0/T_b},
 \end{equation}
@@ -61,13 +61,23 @@ where the reaction rates are given by
     T_b}{2\pi}\right)^{3/2} e^{-\epsilon_0/T_b} \\
     \alpha^{(2)}(T_b) &= \frac{64\pi}{\sqrt{27\pi}}
     \frac{\alpha^2}{m_e^2}\sqrt{\frac{\epsilon_0}{T_b}}\phi_2(T_b) \\
-    \phi_2(T_b) &= 0.448\ln(\epsilon_0/T_b).
+    \phi_2(T_b) &= 0.448\ln(\epsilon_0/T_b)
 \end{align}
 \cite{WintherII:2020}. The Saha equation given by equation \ref{eq:saha_eq} is derived with the assumption that we have the equilibrium reaction $e^- +p\rightleftharpoons H+\gamma$ \cite[p.70]{Dodelson:1282338}. That is the relation between free electrons and protons and neutral hydrogen remains relatively constant. In this case of the early universe all matter is ionized making. Therefore this equation is only valid as long as the free electron fraction $X_e$ is close to one. Therefore we solve we solve the Saha equation when $1\leq X_e<0.99$. This equation can be solved as a regular second order equation where the solution is given by
 \begin{equation}
     X_e = \frac{F(x)}{2}\left[-1\pm\sqrt{1+4/F(x)}\right],
 \end{equation}
-where $F=\frac{1}{n_b} \left(\frac{m_eT_b}{2\pi}\right)^{3/2} e^{-\epsilon_0/T_b}$. Here we only take into account the positive solution as the negative solution has no physical importance. When electrons freezes out and leaves equilibrium we have to resort to the Peebles' equation given by equation \ref{eq:peeble_eq}.
+where $F=\frac{1}{n_b} \left(\frac{m_eT_b}{2\pi}\right)^{3/2} e^{-\epsilon_0/T_b}$. Here we only take into account the positive solution as the negative solution has no physical importance. When electrons freezes out and leaves equilibrium we have to resort to the Peebles' equation given by equation \ref{eq:peeble_eq}. Using a numerical ODE solver one can solve the peebles equation from $x_{transition}$ untill today where $x_{transition}$ is first $x$ value where $X_e$ is less than $0.99$. Since the solutions for $X_e$ and $n_e$ varies several orders of magnitude over a relatively short time period, we spline the logarithm of the solution to reduce numerical errors.
+\\\\\indent
+Now that we can evaluate $n_e$ for an arbitrary $x$ we can solve the ODE for tau given by equation \ref{eq:optical_depth_of_x} numerically. From the definition of the optical depth, we know that the boundary condition implies that at current time $\tau=0$. When looking at $x=0$ we haven't looked back in time through any of the intergalactic so there is so significant attenuation. Since we do not know the boundary condition as $x$ approaches infinity we set an arbitrarily large initial value for $\tau$. In this case $\tau_0=10^5$ was chosen. We can then subtract the solution at $x=0$ from the whole solution scaling it properly so that it reaches zero today. The final quantity we will compute is the visibility function given by
+\begin{equation}
+    \widetilde{g}(x)=-\frac{d\tau}{dx}e^{-\tau}.
+\end{equation}
+This quantity is normalized as
+\begin{equation}
+    \int_{-\infty}^{0} \tilde{g}(x)dx = 1,
+\end{equation}
+making it a probability distribution. It describes the probability at which $x$ an observed CMB photon observed today was last scattered (\cite{callin2006calculate}).
 \label{sec:results}
 
 \section{Benchmark}
