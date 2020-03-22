@@ -38,22 +38,33 @@ ddtauddx_of_x = data[:, 5]
 g_of_x = data[:, 6]
 dgdx_of_x = data[:, 7]
 ddgddx_of_x = data[:, 8]
+saha_Xe_sol = data[:, 9]
+
+
 
 
 x_lss = x[np.argmax(g_of_x)] # x=log(a) coordinate value of last scattering surface
 x_rec = x[np.argmin(np.abs(Xe_of_x - 0.5))]
+x_saha_rec = x[np.argmin(np.abs(saha_Xe_sol - 0.5))]
+
 print(f"Time of last scattering surface x_* = {x_lss}")
 print(f"Time of last scattering surface z_* = {x_to_z(x_lss)}")
 print(f"Time of recombination x_rec = {x_rec}")
 print(f"Time of recombination z_rec = {x_to_z(x_rec)}")
-
+print(f"Time of recombination x_rec according to Saha eq = {x_saha_rec}")
+print(f"Time of recombination z_rec according to Saha eq = {x_to_z(x_saha_rec)}")
 
 fig, ax = plt.subplots() 
-ax.semilogy(x, Xe_of_x)
+ax.semilogy(x, Xe_of_x, label="Combined solution")
+ax.semilogy(x[np.where(x < -6.8)], saha_Xe_sol[np.where(x < -6.8)], label=" Solution using Saha eq")
+ax.semilogy(x_rec, 0.5, "ro", label="Recombination")
+ax.semilogy(x_saha_rec, 0.5, "bo", label="Recombination using Saha eq ")
 ax.set_xlabel(r"$x=$log$(a)$")
 ax.set_ylabel(r"$X_e$")
 ax.set_title("Free electron fraction")
 ax.grid()
+ax.legend()
+ax.set_ylim(Xe_of_x[-1] - 1e-4, 1.5)
 plt.tight_layout()
 fig.savefig(save_directory + "xe.pdf", dpi=1000)
 
@@ -112,4 +123,6 @@ Time of last scattering surface x_* = -6.98376
 Time of last scattering surface z_* = 1077.9676679708941
 Time of recombination x_rec = -7.16616
 Time of recombination z_rec = 1293.8627707684411
+Time of recombination x_rec according to Saha eq = -7.23248
+Time of recombination z_rec according to Saha eq = 1382.649703868363
 """
