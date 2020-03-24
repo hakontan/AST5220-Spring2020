@@ -99,8 +99,8 @@ The results presented in this report were simulated using the following values f
     \label{fig:ne}
 \end{figure}
 The solution for the optical depth $\tau$, calculated by using the expression given by equation \ref{eq:optical_depth_of_x} is shown in figure \ref{fig:tau}.
-The visibility function calculated by equation \ref{eq:visibility} is illustraded figure \ref{fig:g}. Furthermore its derivatives are shown in figures \ref{fig:dgdx} and \ref{fig:ddgdxx}.
-By defining the last scattering surface to be the peak of the visibility function, we find the time of the last scattering surface to correspond to $x=-6.98$ which corresponds to an approximate redshift of $z=1077$.
+The visibility function calculated by equation \ref{eq:visibility} is illustraded figure \ref{fig:g}. In the same figure its derivatives are also shown. Here all the quantities are scaled by dividing by their respective maximum values.
+By defining the last scattering surface to be the peak of the visibility function, we find the time of the last scattering surface to correspond to $x_*=-6.98$ which corresponds to an approximate redshift of $z_*=1077$.
 \begin{figure}
     \includegraphics[scale=0.8]{figures/tau.pdf}
     \caption{Figure showing the optical depth of the universe $\tau$ and its derivatives as a function of $x=log(a)$.}S
@@ -109,25 +109,14 @@ By defining the last scattering surface to be the peak of the visibility functio
 
 \begin{figure}
     \includegraphics[scale=0.8]{figures/g.pdf}
-    \caption{Figure showing the visibility function $\widetilde{g}(x)$ as a function of $x=log(a)$.}
+    \caption{Figure showing the visibility function $\widetilde{g}(x)$ and its derivatives as a function of $x=log(a)$. All quantities are scaled by their respective maximum value so that they all fit inside one plot. Large portions of the simulation were left out of the plot on both ends as all quantities were negligible at these times when leaving out reionization.}
     \label{fig:g}
 \end{figure}
 
-\begin{figure}
-    \includegraphics[scale=0.8]{figures/dgdx.pdf}
-    \caption{Figure showing the derivative of the visibility function $\frac{d\widetilde{g}(x)}{dx}$ as a function of $x=log(a)$.}
-    \label{fig:dgdx}
-\end{figure}
-
-\begin{figure}
-    \includegraphics[scale=0.8]{figures/ddgdxx.pdf}
-    \caption{Figure showing the double derivative of the visibility function $\frac{d^2\widetilde{g}(x)}{dx^2}$ as a function of $x=log(a)$.}
-    \label{fig:ddgdxx}
-\end{figure}
 As a short benchmark the elapsed time for one random calculation of $X_e$ turned out be $0.00549402$ sec and for $\tau$ the elapsed time was $0.000820157$ sec. All timed with the C++ Chrono library.
 \section{Discussion}\label{sec:discussion}
 When studying the solution for the free electron fraction, as shown in figure \ref{fig:xe}, one can clearly see that in the early universe all electrons are free. The equilibrium solution from the Saha equation is valid until approximately $x=7.5$. At this time the Saha equation is no longer valid as we no longer have thermal equilibrium due to the expansion of the universe. This allows protons and electrons to combine and form neutral hydrogen. The results of our simulations also point to recombination and the last scattering happening shortly after this. We can also see that the solution using only the Saha equation predicts the time of recombination to be close to the combined solution. Allthough it predicts it to happen a bit early. It is also clear from figure \ref{fig:xe} that the Saha equation is not sufficient to describe the physical conditions after recombination. Shortly after recombination, as seen from the combined solution, electrons freeze out and stabilize at a constant fraction of around $X_e\approx10^{-4}$ making almost all baryonic matter in the universe neutral. By studying the number density of free electrons, as shown in figure \ref{fig:ne}, one can see that the number density experiences a sudden drop around the same time as recombination. Before this the number density falls of exponentially proportional to $a^{-3}$. After recombination, when electrons has frozen out and the free electron fraction has stabilized at a constant value again, the number density of electrons falls off proportional to $a^{-3}$ again.\\\\\indent
-When studying the solution for the optical depth, as shown in figure \ref{fig:tau}, one can see that the optical depth increases as we look further back through the universe. After recombination, when the free electon fraction has stabilized, the optical depth increases exponentially. As we look further back in time the universe becomes denser, as shown in the solution for $n_e$, making the scattering on free electrons occur more frequently. During recombination the free electron fraction and the free electron density experiences a dramatic change. This is also reflected on the optical depth. The universe doesn't become optically thick meaning $\tau>1$ untill before recombination has occured. After this the universe is a lot denser and the free electron fraction shows that the universe is almost fully ionized making scattering of free electrons inevitable. One can clearly see that before recombination we have $\tau\gg 1$ making the universe completely opaque. The visibility function $\widetilde{g}(x)$, as shown in figure \ref{fig:g}, peaks at $x=-6.98$ in our simulation. This gives a good estimate to when the last scattering surface occured. This is consistent with the other plots for $X_e$, $n_e$ and $\tau$. It also shows that the last scattering surface occured a small bit after recombination in which we have defined as $X_e=0.5$. This is reasonable as recombination has to occure before Thomson scattering due to free electrons becomes negligible. \\\\\indent
+When studying the solution for the optical depth, as shown in figure \ref{fig:tau}, one can see that the optical depth increases as we look further back through the universe. After recombination, when the free electon fraction has stabilized, the optical depth increases exponentially. As we look further back in time the universe becomes denser, as shown in the solution for $n_e$, making the scattering on free electrons occur more frequently. During recombination the free electron fraction and the free electron density experiences a dramatic change. This is also reflected on the optical depth. The universe doesn't become optically thick meaning $\tau>1$ untill before recombination has occured. After this the universe is a lot denser and the free electron fraction shows that the universe is almost fully ionized making scattering of free electrons inevitable. One can clearly see that before recombination we have $\tau\gg 1$ making the universe completely opaque. The visibility function $\widetilde{g}(x)$, as shown in figure \ref{fig:g}, peaks at $x_*=-6.98$ in our simulation. This gives a good estimate to when the last scattering surface occured. This is consistent with the other plots for $X_e$, $n_e$ and $\tau$. It also shows that the last scattering surface occured a small bit after recombination in which we have defined as $X_e=0.5$. This is reasonable as recombination has to occure before Thomson scattering due to free electrons becomes negligible. \\\\\indent
 We have simulated the process of recombination using a simplified model. Allthough excluding helium, we have a model that produces results consistent with observations and theory. Our model seem to capture the process of last scattering and recombination, allthough excluding reionization our model will propbably not reproduce observed behavior at later times. A further improvement on our model would be to include this in our simulation.
 
 
