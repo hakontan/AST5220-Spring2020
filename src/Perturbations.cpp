@@ -70,13 +70,11 @@ void Perturbations::integrate_perturbations(){
     };
 
     // Integrate from x_start -> x_end_tight
-    // ...
-    // ...
-    // ...
-    // ...
-    // ...
-
-    //====i===============================================================
+    Vector x_tc = Utils::linspace(x_start, x_end_tight, n_x/2);
+    ODESolver tc_ODE;
+    tc_ODE.solve(dydx_tight_coupling, x_tc, y_tight_coupling_ini);
+    auto y_tight_coupling = tc_ODE.get_data()
+    //===================================================================
     // TODO: Full equation integration
     // Remember to implement the routines:
     // set_ic_after_tight_coupling : The IC after tight coupling ends
@@ -84,7 +82,7 @@ void Perturbations::integrate_perturbations(){
     //===================================================================
 
     // Set up initial conditions (y_tight_coupling is the solution at the end of tight coupling)
-    // auto y_full_ini = set_ic_after_tight_coupling(y_tight_coupling, x_end_tight, k);
+    auto y_full_ini = set_ic_after_tight_coupling(y_tight_coupling, x_end_tight, k);
 
     // The full ODE system
     ODEFunction dydx_full = [&](double x, const double *y, double *dydx){
@@ -92,11 +90,10 @@ void Perturbations::integrate_perturbations(){
     };
 
     // Integrate from x_end_tight -> x_end
-    // ...
-    // ...
-    // ...
-    // ...
-    // ...
+    Vector x_full = Utils::linspace(x_end_tight, x_end, n_x/2);
+    ODESolver full_ODE;
+    full_ODE.solve(dydx_full, x_tc, y_full_ini);
+    auto y_full = full_ODE.get_data(); 
 
     //===================================================================
     // TODO: remember to store the data found from integrating so we can
@@ -293,8 +290,18 @@ double Perturbations::get_tight_coupling_time(const double k) const{
   // TODO: compute and return x for when tight coupling ends
   // Remember all the three conditions in Callin
   //=============================================================================
-  // ...
-  // ...
+  double dtaudx;
+  double ck_over_Hp;
+  double x_step = (x_end - x_start) / (double) n_x;
+
+  for (double x = x_start; x < x_end; x += x_step) {
+    dtaudx     = rec->ddtauddx_of_x(x);
+    ck_over_Hp = Constants.c * k / cosmo->Hp_of_x(x);
+    x_tight_coupling_end = x;
+    if (std::abs(dtaudx) < 10 * std::min(1, ck_over_Hp) || x > std::log(1701)) {
+      break
+    } 
+  }
 
   return x_tight_coupling_end;
 }
@@ -404,16 +411,13 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
   double &dv_bdx          =  dydx[Constants.ind_vb_tc];
   double &dPhidx          =  dydx[Constants.ind_Phi_tc];
   double *dThetadx        = &dydx[Constants.ind_start_theta_tc];
-  double *dNudx           = &dydx[Constants.ind_start_nu_tc];
+  //double *dNudx           = &dydx[Constants.ind_start_nu_tc];
 
   //=============================================================================
   // TODO: fill in the expressions for all the derivatives
   //=============================================================================
 
   // SET: Scalar quantities (Phi, delta, v, ...)
-  // ...
-  // ...
-  // ...
   double Psi = - Phi - 12.0 * H0 * H0 * Omega_R * Theta[2] / (c * c * k * k * a * a);
   
 
@@ -428,14 +432,12 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
 
 
   // SET: Photon multipoles (Theta_ell)
-  // ...
-  // ...
   double q = (- ((1.0 - R)*dtaudx + (1 + R)*ddtauddx)*(3*Theta[1] + v_b) - (c * k / Hp)*Psi
              + (1.0 - dHpdx / Hp) * c * k * (-Theta[0] + 2*Theta[2]) / Hp - (c * k / Hp) * dThetadx[0])
              / ((1.0 + R)*dtaudx + dHpdx / Hp -1);
   dv_bdx = (1.0 / (1.0 + R)) * (- v_b - c * k * Psi / Hp + R * (q + (c * k / Hp) * (-Theta[0] + 2 *Theta[2]) - c * k *Psi / Hp));
 
-  dTgetadx[0] = - c * k * Theta1[0] / hp - Phi;
+  dThetadx[0] = - c * k * Theta1[0] / Hp - Phi;
   dThetadx[1] = (1.0 / 3) * (q - dv_bdx);  
 
 
@@ -481,28 +483,51 @@ int Perturbations::rhs_full_ode(double x, double k, const double *y, double *dyd
   double *dTheta_pdx      = &dydx[Constants.ind_start_thetap];
   double *dNudx           = &dydx[Constants.ind_start_nu];
 
-  // Cosmological parameters and variables
-  // double Hp = cosmo->Hp_of_x(x);
-  // ...
-
-  // Recombination variables
-  // ...
-
+  //Constants and variables used in the calculation
+  const double c              = Constants.c;
+  const double Hp             = cosmo->Hp_of_x(x);
+  const double dHpdx          = cosmo->dHpdx_of_x(x);
+  const double H0             = cosmo->get_H0;
+  const double Omega_CDM      = cosmo->get_OmegaCDM(0);
+  const double Omega_B        = cosmo->get_OmegaB(0);
+  const double Omega_R        = cosmo->get_OmegaR(0);
+  const double a              = std::exp(x);
+  const double R              = 4 * Omega_R / (3 * Omega_B * a);
+  const double dtaudx         = rec->dtaudx_of_x(x);  
+  const double ddtauddx       = rec->ddtauddx_of_x(x);
+  const double ck_over_Hp     = c * k / Hp;
+  const double eta            = cosmo->eta_of_x(x);
   //=============================================================================
   // TODO: fill in the expressions for all the derivatives
   //=============================================================================
 
   // SET: Scalar quantities (Phi, delta, v, ...)
-  // ...
-  // ...
-  // ...
+  double Psi = - Phi - 12.0 * H0 * H0 * Omega_R * Theta[2] / (c * c * k * k * a * a);
+  
+
+  dPhidx = Psi - Phi * c * c * k * k / (3.0 * Hp * Hp) + H0 * H0 / (2.0 * Hp * Hp)
+           * (Omega_CDM * delta_cdm / a + Omega_B * delta_b / a + 4.0 * Omega_R * Theta[0] / (a * a));
+  
+  ddelta_cdmdx   = c * k * v_cdm / Hp - 3.0 * dPhidx;
+  dv_cdmdx       = - v_cdm - c * k /Hp * Psi;
+
+  ddelta_bdx     = c * k * v_b / Hp - 3 * dPhidx;
+  dv_bdx         = - v_b + c * k * Psi / Hp + dtaudx * R * (3 * Theta[1] + v_b);
 
   // SET: Photon multipoles (Theta_ell)
-  // ...
-  // ...
-  // ...
+  dThetadx[0] = - c * k * Theta[1] / Hp - Phi;
+  dThetadx[1] = ck_over_Hp * Theta[0] / 3.0 - ck_over_Hp * 2.0 * Theta[2] / 3.0
+                + ck_over_Hp * Psi / 3.0 + dtaudx * (Theta[1] + v_b / 3.0);
+  
+  for (int ell = 2; ell < n_ell_theta - 1; ell++) {
+    dThetadx[ell] = ck_over_Hp * ell * Theta[ell-1] / (2 * ell + 1) 
+                    - ck_over_Hp * (ell + 1) * Theta[ell+1] / (2 * ell + 1)
+                    + dtaudx * Theta[ell];
+  }
 
-  // SET: Photon polarization multipoles (Theta_p_ell)
+  dThetadx[n_ell_theta] = ck_over_Hp * Theta[n_ell_theta - 1] 
+                          - c * (n_ell_theta + 1) * Theta[n_ell_theta] / (Hp * eta)
+                          + dtaudx * Theta[n_ell_theta];
 
 
   return GSL_SUCCESS;
