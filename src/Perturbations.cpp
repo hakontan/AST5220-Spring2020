@@ -38,6 +38,15 @@ void Perturbations::integrate_perturbations(){
   // quadratic or a logarithmic spacing
   //===================================================================
   Vector k_array(n_k);
+  Vector x_array(n_x);
+
+  Vector Psi(n_k * n_x);
+  Vector Phi(n_k * n_x);
+  Vector v_cdm(n_k * n_x);
+  Vector delta_cdm(n_k * n_x);
+  Vector v_b(n_k * n_x);
+  Vector delta_b(n_k * n_x);
+  Vector Theta0(n_k * n_x * Constants.n_ell_theta);
 
   // Loop over all wavenumbers
   for(int ik = 0; ik < n_k; ik++){
@@ -73,7 +82,26 @@ void Perturbations::integrate_perturbations(){
     Vector x_tc = Utils::linspace(x_start, x_end_tight, n_x/2);
     ODESolver tc_ODE;
     tc_ODE.solve(dydx_tight_coupling, x_tc, y_tight_coupling_ini);
-    auto y_tight_coupling = tc_ODE.get_data()
+  
+    auto Phi_tc         = tc_ODE.get_data_by_component(Constants.ind_Phi_tc);
+    auto delta_b_tc     = tc_ODE.get_data_by_component(Constants.ind_deltab_tc);
+    auto delta_cdm_tc   = tc_ODE.get_data_by_component(Constants.ind_deltacdm_tc);
+    auto v_cdm_tc       = tc_ODE.get_data_by_component(Constants.ind_deltacdm_tc);
+    auto v_b_tc         = tc_ODE.get_data_by_component(Constants.ind_deltacdm_tc);
+    auto theta          = tc_ODE.get_data_by_component(Constants.ind_start_theta_tc);
+
+    int tc_k_interval;  
+    tc_k_interval = 0;
+    for (int q = 0; q <= (n_k-1) * n_x; q += n_x) {
+      for (int j = 0; j < n_x/2 ; j++) {
+        Phi[q * j]        = Phi_tc[j + tc_k_interval];
+        delta_b[q * j]    = delta_b_tc[j + tc_k_interval];
+        delta_cdm[q * j]  = delta_cdm_tc[j + tc_k_interval];
+        v_b[q * j]        = v_b_tc[j + tc_k_interval];
+        v_cdm[q * j]      = v_cdm_tc[j + tc_k_interval];
+      }
+    tc_k_interval += n_x/2;
+    }
     //===================================================================
     // TODO: Full equation integration
     // Remember to implement the routines:
@@ -82,7 +110,7 @@ void Perturbations::integrate_perturbations(){
     //===================================================================
 
     // Set up initial conditions (y_tight_coupling is the solution at the end of tight coupling)
-    auto y_full_ini = set_ic_after_tight_coupling(y_tight_coupling, x_end_tight, k);
+    auto y_full_ini = set_ic_after_tight_coupling(tc_ODE.get_data(), x_end_tight, k);
 
     // The full ODE system
     ODEFunction dydx_full = [&](double x, const double *y, double *dydx){
@@ -95,6 +123,25 @@ void Perturbations::integrate_perturbations(){
     full_ODE.solve(dydx_full, x_tc, y_full_ini);
     auto y_full = full_ODE.get_data(); 
 
+    auto Phi_after         = full_ODE.get_data_by_component(Constants.ind_Phi_tc);
+    auto delta_b_after     = full_ODE.get_data_by_component(Constants.ind_deltab_tc);
+    auto delta_cdm_after   = full_ODE.get_data_by_component(Constants.ind_deltacdm_tc);
+    auto v_cdm_after       = full_ODE.get_data_by_component(Constants.ind_deltacdm_tc);
+    auto v_b_after         = full_ODE.get_data_by_component(Constants.ind_deltacdm_tc);
+    auto theta_after       = tc_ODE.get_data_by_component(Constants.ind_start_theta_tc);
+
+      
+    tc_k_interval = 0;
+    for (int q = 0; q <= (n_k-1) * n_x; q += n_x) {
+      for (int j = n_x/2; j < n_x ; j++) {
+        Phi[q * j]        = Phi_tc[j + tc_k_interval];
+        delta_b[q * j]    = delta_b_tc[j + tc_k_interval];
+        delta_cdm[q * j]  = delta_cdm_tc[j + tc_k_interval];
+        v_b[q * j]        = v_b_tc[j + tc_k_interval];
+        v_cdm[q * j]      = v_cdm_tc[j + tc_k_interval];
+      }
+    tc_k_interval += n_x/2;
+    }
     //===================================================================
     // TODO: remember to store the data found from integrating so we can
     // spline it below
@@ -123,6 +170,7 @@ void Perturbations::integrate_perturbations(){
   // ...
   // ...
   // ...
+  delta_cdm_spline.create(x_array, k_array, delta_cdm);
 }
 
 //====================================================
@@ -271,8 +319,8 @@ Vector Perturbations::set_ic_after_tight_coupling(
   Theta[1] = theta_1_init;
   Theta[2] = theta_2_init;
 
-  for (int ell = 3; ell =< n_ell_theta) {
-    Theta[ell] = - ell * Constants.c * k * Theta_[ell-1] 
+  for (int ell = 3; ell <= n_ell_theta; ell++) {
+    Theta[ell] = - ell * Constants.c * k * Theta[ell-1] 
                  / ((2 * ell - 1) * cosmo->Hp_of_x(x) * rec->dtaudx_of_x(x));
   }
 
@@ -298,9 +346,12 @@ double Perturbations::get_tight_coupling_time(const double k) const{
     dtaudx     = rec->ddtauddx_of_x(x);
     ck_over_Hp = Constants.c * k / cosmo->Hp_of_x(x);
     x_tight_coupling_end = x;
-    if (std::abs(dtaudx) < 10 * std::min(1, ck_over_Hp) || x > std::log(1701)) {
-      break
+    if (std::fabs(dtaudx) < 10 * std::min(1.0, ck_over_Hp)) {
+      break;
     } 
+    if (x > std::log(1701)) {
+      break;
+    }
   }
 
   return x_tight_coupling_end;
@@ -381,7 +432,7 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
   const double c              = Constants.c;
   const double Hp             = cosmo->Hp_of_x(x);
   const double dHpdx          = cosmo->dHpdx_of_x(x);
-  const double H0             = cosmo->get_H0;
+  const double H0             = cosmo->get_H0();
   const double Omega_CDM      = cosmo->get_OmegaCDM(0);
   const double Omega_B        = cosmo->get_OmegaB(0);
   const double Omega_R        = cosmo->get_OmegaR(0);
@@ -437,7 +488,7 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
              / ((1.0 + R)*dtaudx + dHpdx / Hp -1);
   dv_bdx = (1.0 / (1.0 + R)) * (- v_b - c * k * Psi / Hp + R * (q + (c * k / Hp) * (-Theta[0] + 2 *Theta[2]) - c * k *Psi / Hp));
 
-  dThetadx[0] = - c * k * Theta1[0] / Hp - Phi;
+  dThetadx[0] = - c * k * Theta[1] / Hp - Phi;
   dThetadx[1] = (1.0 / 3) * (q - dv_bdx);  
 
 
@@ -487,7 +538,7 @@ int Perturbations::rhs_full_ode(double x, double k, const double *y, double *dyd
   const double c              = Constants.c;
   const double Hp             = cosmo->Hp_of_x(x);
   const double dHpdx          = cosmo->dHpdx_of_x(x);
-  const double H0             = cosmo->get_H0;
+  const double H0             = cosmo->get_H0();
   const double Omega_CDM      = cosmo->get_OmegaCDM(0);
   const double Omega_B        = cosmo->get_OmegaB(0);
   const double Omega_R        = cosmo->get_OmegaR(0);
