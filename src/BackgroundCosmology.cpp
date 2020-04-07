@@ -113,7 +113,9 @@ double BackgroundCosmology::Hp_of_x(double x) const{
   //=============================================================================
   //...
   //...
-  double Hp_of_x = H_of_x(x) * std::exp(x);
+  double Hp_of_x = get_H0() * std::sqrt((OmegaB + OmegaCDM) * std::exp(-x)
+                                   + OmegaR * std::exp(-2 * x)
+                                   + OmegaLambda * std::exp(2 * x));
 
   return Hp_of_x;
 }
@@ -129,7 +131,7 @@ double BackgroundCosmology::dHpdx_of_x(double x) const{
                    - 2 * OmegaR * std::exp(-2*x)
                    + 2 * OmegaLambda * std::exp(2*x));
 
-  return H0 * factor / (2 * Hp_of_x(x));
+  return get_H0() * factor / (2 * std::sqrt(Hp_of_x(x) / get_H0()));
 }
 
 double BackgroundCosmology::ddHpddx_of_x(double x) const{

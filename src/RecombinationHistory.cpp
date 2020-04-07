@@ -261,6 +261,7 @@ void RecombinationHistory::solve_for_optical_depth_tau(){
   const int npts = 1000;
   Vector x_array = Utils::linspace(x_start, x_end, npts);
   Vector tau(npts);
+  Vector tau_deriv(npts);
   Vector g(npts);
   // The ODE system dtau/dx, dtau_noreion/dx and dtau_baryon/dx
   ODEFunction dtaudx = [&](double x, const double *tau, double *dtaudx){
@@ -286,7 +287,7 @@ void RecombinationHistory::solve_for_optical_depth_tau(){
   for (int i = 0; i<npts; i++) {
     // Scaling the solution by subtracting the end point at a=1
     tau[i] = tau_data[i] - tau_data[npts - 1];
-
+    tau_deriv[i] = - Constants.c * ne_of_x(x_array[i]) * Constants.sigma_T / cosmo->H_of_x(x_array[i]);
   }
   
   //=============================================================================
@@ -297,7 +298,9 @@ void RecombinationHistory::solve_for_optical_depth_tau(){
     g[i] =  std::exp(-tau[i]) * Constants.c * Constants.sigma_T * ne_of_x(x_array[i]) / cosmo->H_of_x(x_array[i]);
   }
 
+
   tau_of_x_spline.create(x_array, tau, "tau Spline");
+  dtaudx_of_x_spline.create(x_array, tau_deriv, "dtaudx Spline");
   g_tilde_of_x_spline.create(x_array, g, "g");
   Utils::EndTiming("opticaldepth");
 }
@@ -316,7 +319,7 @@ double RecombinationHistory::dtaudx_of_x(double x) const{
   //=============================================================================
   // Returns the derivative of tau using the .deriv_x method
   //=============================================================================
-  return tau_of_x_spline.deriv_x(x);
+  return dtaudx_of_x_spline(x);
 }
 
 double RecombinationHistory::ddtauddx_of_x(double x) const{
@@ -325,7 +328,7 @@ double RecombinationHistory::ddtauddx_of_x(double x) const{
   // Returns double derivative of tau using the .deriv_xx method
   //=============================================================================
 
-  return tau_of_x_spline.deriv_xx(x);
+  return dtaudx_of_x_spline.deriv_x(x);
 }
 
 double RecombinationHistory::g_tilde_of_x(double x) const{
