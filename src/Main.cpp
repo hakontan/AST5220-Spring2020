@@ -14,13 +14,13 @@ int main(int argc, char **argv){
   // Background parameters
   double h           = 0.7;
   double OmegaB      = 0.05;
-  double OmegaCDM    = 0.25;
-  double OmegaLambda = 0.7;
+  double OmegaCDM    = 0.45;
+  double OmegaLambda = 0.5;
   double Neff        = 3.046;
   double TCMB        = 2.7255;
 
   // Recombination parameters
-  double Yp          = 0.24;
+  double Yp          = 0.0;
   
   //=========================================================================
   // Module I

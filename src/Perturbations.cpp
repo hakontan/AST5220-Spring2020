@@ -21,7 +21,7 @@ void Perturbations::solve(){
   integrate_perturbations();
 
   // Compute source functions and spline the result
-  compute_source_functions();
+  //compute_source_functions();
 }
 
 //====================================================
@@ -45,7 +45,7 @@ void Perturbations::integrate_perturbations(){
   Vector delta_cdm(n_k * n_x);
   Vector v_b(n_k * n_x);
   Vector delta_b(n_k * n_x);
-  Vector Theta(n_k * n_x * Constants.n_ell_theta);
+  Vector2D Theta(Constants.n_ell_theta, Vector(n_k * n_x));
 
   //Initializing k_array with logarithmic spacing
   double delta_k = std::log(k_max / k_min) / double(n_k - 1);
@@ -100,17 +100,26 @@ void Perturbations::integrate_perturbations(){
     auto delta_cdm_tc   = tc_ODE.get_data_by_component(Constants.ind_deltacdm_tc);
     auto v_cdm_tc       = tc_ODE.get_data_by_component(Constants.ind_deltacdm_tc);
     auto v_b_tc         = tc_ODE.get_data_by_component(Constants.ind_deltacdm_tc);
-    auto theta          = tc_ODE.get_data_by_component(Constants.ind_start_theta_tc);
+    auto theta_tc       = tc_ODE.get_data_by_component(Constants.ind_start_theta_tc);
     //std::cout << "tc_ode solved" << std::endl;
        
-
+    double Theta_2;
     for (int ix = 0; ix < x_end_index; ix++) {
         Phi[ix + n_x * ik]        = Phi_tc[ix];
         delta_b[ix + n_x * ik]    = delta_b_tc[ix];
         delta_cdm[ix + n_x * ik]  = delta_cdm_tc[ix];
         v_b[ix + n_x * ik]        = v_b_tc[ix];
         v_cdm[ix + n_x * ik]      = v_cdm_tc[ix];
+
     }
+    
+    for (int ell = 0; ell < 2; ell++) {
+      auto theta_tc       = tc_ODE.get_data_by_component(Constants.ind_start_theta_tc + ell);
+      for (int ix = 0; ix < x_end_index; ix++) {
+        Theta[ell][ix + n_x * ik] = theta_tc[ix];
+      }
+    }
+    
     //std::cout << "tc_ode solution stored" << std::endl;
     //===================================================================
     // TODO: Full equation integration
@@ -140,7 +149,7 @@ void Perturbations::integrate_perturbations(){
     auto v_cdm_after       = full_ODE.get_data_by_component(Constants.ind_deltacdm_tc);
     auto v_b_after         = full_ODE.get_data_by_component(Constants.ind_deltacdm_tc);
     auto theta_after       = full_ODE.get_data_by_component(Constants.ind_start_theta_tc);
-    //std::cout << "full ODE solved" << std::endl;
+    
       
     for (int ix = 0; ix < n_x - x_end_index; ix ++) {
         //std::cout << ix << std::endl;
@@ -150,8 +159,24 @@ void Perturbations::integrate_perturbations(){
         v_b[x_end_index + ix + n_x * ik]        = v_b_after[ix];
         v_cdm[x_end_index + ix + n_x * ik]      = v_cdm_after[ix];
     }
+    for (int ell = 0; ell < Constants.n_ell_theta; ell++) {
+      auto theta_after       = full_ODE.get_data_by_component(Constants.ind_start_theta + ell);
+      for (int ix = 0; ix < n_x - x_end_index; ix ++) {
+        Theta[ell][x_end_index + ix + n_x * ik] = theta_after[ix];
+        //std::cout << Theta[ell][x_end_index + ix + n_x * ik] << std::endl;
+      }
+    }
+
     //std::cout << "Full ODE solution stored" << std::endl;
-    
+    /*
+    for (int ix = 0; ix < n_x; ix++) {
+       Psi[ix + n_x * n_k] = - Phi[ix + n_x * n_k] 
+                             - 12.0 * cosmo->get_H0() * cosmo->get_H0() * cosmo->get_OmegaR(0)
+                             * Theta[2][ix + n_x * n_k] 
+                             / (Constants.c * Constants.c * ik * ik * std::exp(x_array[ix] * std::exp(x_array[ix]);
+
+    }
+    */
     //===================================================================
     // TODO: remember to store the data found from integrating so we can
     // spline it below
@@ -186,7 +211,16 @@ void Perturbations::integrate_perturbations(){
   v_cdm_spline.create(x_array, k_array, v_cdm, "v_cdm_spline");
   v_b_spline.create(x_array, k_array, v_b, "v_b_spline");
 
+  for (int ell = 0; ell < Constants.n_ell_theta; ell++) {
+    std::cout << "Making theta splines" << std::endl;
+    Theta_spline[ell].create(x_array, k_array, Theta[ell]);
+  }
+  /*
+  for (int ell = 0; ell < Constants.n_ell_theta) {
 
+  }
+  */
+  std::cout << "Splines created" << std::endl;
 }
 
 //====================================================
@@ -503,7 +537,8 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
   // SET: Scalar quantities (Phi, delta, v, ...)
   double Theta_2   = - 20.0 * Constants.c * k * Theta[1]
                      / (45.0 * cosmo->Hp_of_x(x) * rec->dtaudx_of_x(x));
-  double Psi       = - Phi - 12.0 * H0 * H0 * Omega_R * Theta[2] / (c * c * k * k * a * a);
+
+  double Psi       = - Phi - 12.0 * H0 * H0 * Omega_R * Theta_2 / (c * c * k * k * a * a);
   
   dPhidx           = Psi - Phi * c * c * k * k / (3.0 * Hp * Hp) + H0 * H0 / (2.0 * Hp * Hp)
                      * (Omega_CDM * delta_cdm / a + Omega_B * delta_b / a + 4.0 * Omega_R * Theta[0] / (a * a));
@@ -612,8 +647,8 @@ int Perturbations::rhs_full_ode(double x, double k, const double *y, double *dyd
   }
   //std::cout << "Theta ell p2" << std::endl;
   dThetadx[n_ell_theta - 1] = ck_over_Hp * Theta[n_ell_theta - 1] 
-                          - c * (n_ell_theta + 1) * Theta[n_ell_theta] / (Hp * eta)
-                          + dtaudx * Theta[n_ell_theta];
+                            - c * (n_ell_theta + 1) * Theta[n_ell_theta] / (Hp * eta)
+                            + dtaudx * Theta[n_ell_theta];
   //std::cout << "Theta ell p3" << std::endl;
 
   return GSL_SUCCESS;
@@ -727,12 +762,16 @@ void Perturbations::output(const double k, const std::string filename) const{
   auto print_data = [&] (const double x) {
     double arg = k * Constants.c * (cosmo->eta_of_x(0.0) - cosmo->eta_of_x(x));
     fp << x                  << " ";
-    //fp << get_Theta(x,k,0)   << " ";
-    //fp << get_Theta(x,k,1)   << " ";
-    //fp << get_Theta(x,k,2)   << " ";
-    fp << get_Phi(x,k)       << " ";
+    //fp << get_Phi(x,k)       << " ";
     //fp << get_Psi(x,k)       << " ";
-    //fp << get_Phi(x,k)        << " ";
+    fp << get_Phi(x,k)        << " ";
+    fp << get_delta_b(x,k)    << " ";
+    fp << get_delta_cdm(x,k)  << " ";
+    fp << get_v_b(x,k)        << " ";
+    fp << get_v_cdm(x, k)     << " ";
+    fp << get_Theta(x,k,0)   << " ";
+    fp << get_Theta(x,k,1)   << " ";
+    fp << get_Theta(x,k,2)   << " ";
     //fp << get_Source_T(x,k)  << " ";
     //fp << get_Source_T(x,k) * Utils::j_ell(5,   arg)           << " ";
     //fp << get_Source_T(x,k) * Utils::j_ell(50,  arg)           << " ";
