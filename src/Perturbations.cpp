@@ -117,6 +117,7 @@ void Perturbations::integrate_perturbations(){
       auto theta_tc       = tc_ODE.get_data_by_component(Constants.ind_start_theta_tc + ell);
       for (int ix = 0; ix < x_end_index; ix++) {
         Theta[ell][ix + n_x * ik] = theta_tc[ix];
+        //std::cout << Theta[ell][ix + n_x * ik] << std::endl;
       }
     }
     
@@ -210,11 +211,12 @@ void Perturbations::integrate_perturbations(){
   delta_b_spline.create(x_array, k_array, delta_b, "delta_b_spline");
   v_cdm_spline.create(x_array, k_array, v_cdm, "v_cdm_spline");
   v_b_spline.create(x_array, k_array, v_b, "v_b_spline");
-
+  /*
   for (int ell = 0; ell < Constants.n_ell_theta; ell++) {
     std::cout << "Making theta splines" << std::endl;
     Theta_spline[ell].create(x_array, k_array, Theta[ell]);
   }
+  */
   /*
   for (int ell = 0; ell < Constants.n_ell_theta) {
 
@@ -384,7 +386,7 @@ Vector Perturbations::set_ic_after_tight_coupling(
 
   for (int ell = 3; ell < n_ell_theta; ell++) {
     Theta[ell] = - ell * Constants.c * k * Theta[ell-1] 
-                 / ((2.0 * ell - 1.0) * cosmo->Hp_of_x(x) * rec->dtaudx_of_x(x));
+                 / ((2.0 * ell + 1.0) * cosmo->Hp_of_x(x) * rec->dtaudx_of_x(x));
   }
 
   return y;
@@ -415,11 +417,11 @@ std::pair<double,int> Perturbations::get_tight_coupling_time(const double k) con
     if (std::fabs(dtaudx) < 10 * std::min(1.0, ck_over_Hp)) {   
       break;
     } 
-    if (Xe < 0.99) {
+    if (x_arr[i] > -7.16) {
       break;
     }
   }
-  //std::cout << x_tight_coupling_end << std::endl;
+  std::cout << x_tight_coupling_end << std::endl;
   return std::pair<double,int>(x_tight_coupling_end, c);
 }
 
@@ -553,11 +555,11 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
   // SET: Photon multipoles (Theta_ell)
   double q = (- ((1.0 - R)*dtaudx + (1.0 + R)*ddtauddx) * (3.0 * Theta[1] + v_b) - (c * k / Hp) * Psi
              + (1.0 - dHpdx / Hp) * c * k * (-Theta[0] + 2.0 * Theta_2) / Hp - (c * k / Hp) * dThetadx[0])
-             / ((1.0 + R)*dtaudx + dHpdx / Hp -1);
+             / ((1.0 + R)*dtaudx + dHpdx / Hp - 1.0);
 
   dv_bdx = (1.0 / (1.0 + R)) * (- v_b - c * k * Psi / Hp + R * (q + (c * k / Hp) * (-Theta[0] + 2 * Theta_2) - c * k * Psi / Hp));
 
-  dThetadx[0] = - c * k * Theta[1] / Hp - Phi;
+  dThetadx[0] = - c * k * Theta[1] / Hp - dPhidx;
   dThetadx[1] = (1.0 / 3) * (q - dv_bdx);  
 
   return GSL_SUCCESS;
@@ -628,27 +630,30 @@ int Perturbations::rhs_full_ode(double x, double k, const double *y, double *dyd
            * (Omega_CDM * delta_cdm / a + Omega_B * delta_b / a + 4.0 * Omega_R * Theta[0] / (a * a));
   
   ddelta_cdmdx   = c * k * v_cdm / Hp - 3.0 * dPhidx;
-  dv_cdmdx       = - v_cdm - c * k /Hp * Psi;
+  dv_cdmdx       = - v_cdm - c * k * Psi /Hp;
 
   ddelta_bdx     = c * k * v_b / Hp - 3 * dPhidx;
   dv_bdx         = - v_b + c * k * Psi / Hp + dtaudx * R * (3 * Theta[1] + v_b);
 
   // SET: Photon multipoles (Theta_ell)
-  dThetadx[0] = - c * k * Theta[1] / Hp - Phi;
+  dThetadx[0] = - c * k * Theta[1] / Hp - dPhidx;
   dThetadx[1] = ck_over_Hp * Theta[0] / 3.0 - ck_over_Hp * 2.0 * Theta[2] / 3.0
                 + ck_over_Hp * Psi / 3.0 + dtaudx * (Theta[1] + v_b / 3.0);
-
+  dThetadx[2] = ck_over_Hp * 2 * Theta[2-1] / (2 * 2 + 1) 
+                  - ck_over_Hp * (2 + 1) * Theta[2+1] / (2 * 2 + 1)
+                  + dtaudx * (Theta[2] - Theta[2] / 10.0);
   //std::cout << "Theta ell p1" << std::endl;
 
-  for (int ell = 2; ell < n_ell_theta - 2; ell++) {
+  int last_ell = Constants.n_ell_theta - 1;
+  for (int ell = 3; ell < last_ell; ell++) {
     dThetadx[ell] = ck_over_Hp * ell * Theta[ell-1] / (2 * ell + 1) 
                     - ck_over_Hp * (ell + 1) * Theta[ell+1] / (2 * ell + 1)
                     + dtaudx * Theta[ell];
   }
   //std::cout << "Theta ell p2" << std::endl;
-  dThetadx[n_ell_theta - 1] = ck_over_Hp * Theta[n_ell_theta - 1] 
-                            - c * (n_ell_theta + 1) * Theta[n_ell_theta] / (Hp * eta)
-                            + dtaudx * Theta[n_ell_theta];
+  dThetadx[last_ell] = ck_over_Hp * Theta[last_ell - 1] 
+                            - c * (last_ell + 1) * Theta[last_ell] / (Hp * eta)
+                            + dtaudx * Theta[last_ell];
   //std::cout << "Theta ell p3" << std::endl;
 
   return GSL_SUCCESS;
@@ -769,9 +774,9 @@ void Perturbations::output(const double k, const std::string filename) const{
     fp << get_delta_cdm(x,k)  << " ";
     fp << get_v_b(x,k)        << " ";
     fp << get_v_cdm(x, k)     << " ";
-    fp << get_Theta(x,k,0)   << " ";
-    fp << get_Theta(x,k,1)   << " ";
-    fp << get_Theta(x,k,2)   << " ";
+    //fp << get_Theta(x,k,0)   << " ";
+    //fp << get_Theta(x,k,1)   << " ";
+    //fp << get_Theta(x,k,2)   << " ";
     //fp << get_Source_T(x,k)  << " ";
     //fp << get_Source_T(x,k) * Utils::j_ell(5,   arg)           << " ";
     //fp << get_Source_T(x,k) * Utils::j_ell(50,  arg)           << " ";
