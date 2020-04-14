@@ -57,6 +57,7 @@ void Perturbations::integrate_perturbations(){
   for(int i = 0; i < n_k; i++){
       k_array[i] = std::exp(k_array[i]);
   }
+
   // Loop over all wavenumbers
   for(int ik = 0; ik < n_k; ik++){
 
@@ -98,21 +99,11 @@ void Perturbations::integrate_perturbations(){
     auto Phi_tc         = tc_ODE.get_data_by_component(Constants.ind_Phi_tc);
     auto delta_b_tc     = tc_ODE.get_data_by_component(Constants.ind_deltab_tc);
     auto delta_cdm_tc   = tc_ODE.get_data_by_component(Constants.ind_deltacdm_tc);
-    auto v_cdm_tc       = tc_ODE.get_data_by_component(Constants.ind_deltacdm_tc);
-    auto v_b_tc         = tc_ODE.get_data_by_component(Constants.ind_deltacdm_tc);
+    auto v_cdm_tc       = tc_ODE.get_data_by_component(Constants.ind_vcdm_tc);
+    auto v_b_tc         = tc_ODE.get_data_by_component(Constants.ind_vb_tc);
     auto theta_tc       = tc_ODE.get_data_by_component(Constants.ind_start_theta_tc);
     //std::cout << "tc_ode solved" << std::endl;
        
-    double Theta_2;
-    for (int ix = 0; ix < x_end_index; ix++) {
-        Phi[ix + n_x * ik]        = Phi_tc[ix];
-        delta_b[ix + n_x * ik]    = delta_b_tc[ix];
-        delta_cdm[ix + n_x * ik]  = delta_cdm_tc[ix];
-        v_b[ix + n_x * ik]        = v_b_tc[ix];
-        v_cdm[ix + n_x * ik]      = v_cdm_tc[ix];
-
-    }
-    
     for (int ell = 0; ell < 2; ell++) {
       auto theta_tc       = tc_ODE.get_data_by_component(Constants.ind_start_theta_tc + ell);
       for (int ix = 0; ix < x_end_index; ix++) {
@@ -120,7 +111,34 @@ void Perturbations::integrate_perturbations(){
         //std::cout << Theta[ell][ix + n_x * ik] << std::endl;
       }
     }
+
+    for (int ix = 0; ix < x_end_index; ix++) {
+        Phi[ix + n_x * ik]        = Phi_tc[ix];
+        delta_b[ix + n_x * ik]    = delta_b_tc[ix];
+        delta_cdm[ix + n_x * ik]  = delta_cdm_tc[ix];
+        v_b[ix + n_x * ik]        = v_b_tc[ix];
+        v_cdm[ix + n_x * ik]      = v_cdm_tc[ix];
+        Theta[2][ix + n_x * ik]   = 20.0 * Constants.c * k * Theta[1][ix + n_x * ik]
+                                    / (45.0 * cosmo->Hp_of_x(x_array[ix]) * rec->dtaudx_of_x(x_array[ix]));
+    }
     
+    for (int ell = 3; ell < Constants.n_ell_theta - 1; ell++) {
+      for (int ix = 0; ix < x_end_index; ix++) {
+        Theta[ell][ix + n_x * ik] = ell * Constants.c * k * Theta[ell-1][ix + n_x * ik]
+                                    / ((2.0 * ell + 1.0) * cosmo->Hp_of_x(x_array[ix])
+                                    * rec->dtaudx_of_x(x_array[ix]));
+        
+      }
+    }
+    
+    
+    for (int ix = 0; ix < x_end_index; ix++) {
+      Psi[ix + n_x * ik]       = - Phi_tc[ix]
+                                  - 12.0 * cosmo->get_H0() * cosmo->get_H0() * cosmo->get_OmegaR(0)
+                                  * Theta[2][ix + n_x * ik]
+                                  / (Constants.c * Constants.c * k * k * std::exp(x_array[ix]) * std::exp(x_array[ix]));
+    }
+  
     //std::cout << "tc_ode solution stored" << std::endl;
     //===================================================================
     // TODO: Full equation integration
@@ -144,12 +162,12 @@ void Perturbations::integrate_perturbations(){
     
     auto y_full = full_ODE.get_data(); 
 
-    auto Phi_after         = full_ODE.get_data_by_component(Constants.ind_Phi_tc);
-    auto delta_b_after     = full_ODE.get_data_by_component(Constants.ind_deltab_tc);
-    auto delta_cdm_after   = full_ODE.get_data_by_component(Constants.ind_deltacdm_tc);
-    auto v_cdm_after       = full_ODE.get_data_by_component(Constants.ind_deltacdm_tc);
-    auto v_b_after         = full_ODE.get_data_by_component(Constants.ind_deltacdm_tc);
-    auto theta_after       = full_ODE.get_data_by_component(Constants.ind_start_theta_tc);
+    auto Phi_after         = full_ODE.get_data_by_component(Constants.ind_Phi);
+    auto delta_b_after     = full_ODE.get_data_by_component(Constants.ind_deltab);
+    auto delta_cdm_after   = full_ODE.get_data_by_component(Constants.ind_deltacdm);
+    auto v_cdm_after       = full_ODE.get_data_by_component(Constants.ind_vcdm);
+    auto v_b_after         = full_ODE.get_data_by_component(Constants.ind_vb);
+    auto theta_after       = full_ODE.get_data_by_component(Constants.ind_start_theta);
     
       
     for (int ix = 0; ix < n_x - x_end_index; ix ++) {
@@ -169,15 +187,16 @@ void Perturbations::integrate_perturbations(){
     }
 
     //std::cout << "Full ODE solution stored" << std::endl;
-    /*
-    for (int ix = 0; ix < n_x; ix++) {
-       Psi[ix + n_x * n_k] = - Phi[ix + n_x * n_k] 
-                             - 12.0 * cosmo->get_H0() * cosmo->get_H0() * cosmo->get_OmegaR(0)
-                             * Theta[2][ix + n_x * n_k] 
-                             / (Constants.c * Constants.c * ik * ik * std::exp(x_array[ix] * std::exp(x_array[ix]);
+    
+    for (int ix = 0; ix < n_x - x_end_index; ix ++) {
+       Psi[x_end_index + ix + n_x * ik] = - Phi_after[ix] 
+                                            - 12.0 * cosmo->get_H0() * cosmo->get_H0() * cosmo->get_OmegaR(0)
+                                            * Theta[2][x_end_index + ix + n_x * ik] 
+                                            / (Constants.c * Constants.c * k * k 
+                                            * std::exp(2 * x_array[ix + x_end_index]));
 
     }
-    */
+    
     //===================================================================
     // TODO: remember to store the data found from integrating so we can
     // spline it below
@@ -206,11 +225,13 @@ void Perturbations::integrate_perturbations(){
   // ...
   // ...
   // ...
+  Psi_spline.create(x_array, k_array, Psi, "Psi_spline");
   Phi_spline.create(x_array, k_array, Phi, "Phi_spline");
   delta_cdm_spline.create(x_array, k_array, delta_cdm, "delta_cdm_spline");
   delta_b_spline.create(x_array, k_array, delta_b, "delta_b_spline");
   v_cdm_spline.create(x_array, k_array, v_cdm, "v_cdm_spline");
   v_b_spline.create(x_array, k_array, v_b, "v_b_spline");
+
   /*
   for (int ell = 0; ell < Constants.n_ell_theta; ell++) {
     std::cout << "Making theta splines" << std::endl;
@@ -421,7 +442,7 @@ std::pair<double,int> Perturbations::get_tight_coupling_time(const double k) con
       break;
     }
   }
-  std::cout << x_tight_coupling_end << std::endl;
+  //std::cout << x_tight_coupling_end << std::endl;
   return std::pair<double,int>(x_tight_coupling_end, c);
 }
 
@@ -768,7 +789,7 @@ void Perturbations::output(const double k, const std::string filename) const{
     double arg = k * Constants.c * (cosmo->eta_of_x(0.0) - cosmo->eta_of_x(x));
     fp << x                  << " ";
     //fp << get_Phi(x,k)       << " ";
-    //fp << get_Psi(x,k)       << " ";
+    fp << get_Psi(x,k)       << " ";
     fp << get_Phi(x,k)        << " ";
     fp << get_delta_b(x,k)    << " ";
     fp << get_delta_cdm(x,k)  << " ";
