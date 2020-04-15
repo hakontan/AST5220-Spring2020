@@ -46,6 +46,7 @@ void Perturbations::integrate_perturbations(){
   Vector v_b(n_k * n_x);
   Vector delta_b(n_k * n_x);
   Vector2D Theta(Constants.n_ell_theta, Vector(n_k * n_x));
+  Theta_spline = std::vector<Spline2D>(Constants.n_ell_theta);
 
   //Initializing k_array with logarithmic spacing
   double delta_k = std::log(k_max / k_min) / double(n_k - 1);
@@ -232,17 +233,11 @@ void Perturbations::integrate_perturbations(){
   v_cdm_spline.create(x_array, k_array, v_cdm, "v_cdm_spline");
   v_b_spline.create(x_array, k_array, v_b, "v_b_spline");
 
-  /*
+
   for (int ell = 0; ell < Constants.n_ell_theta; ell++) {
-    std::cout << "Making theta splines" << std::endl;
     Theta_spline[ell].create(x_array, k_array, Theta[ell]);
   }
-  */
-  /*
-  for (int ell = 0; ell < Constants.n_ell_theta) {
-
-  }
-  */
+  
   std::cout << "Splines created" << std::endl;
 }
 
@@ -654,12 +649,14 @@ int Perturbations::rhs_full_ode(double x, double k, const double *y, double *dyd
   dv_cdmdx       = - v_cdm - c * k * Psi /Hp;
 
   ddelta_bdx     = c * k * v_b / Hp - 3 * dPhidx;
-  dv_bdx         = - v_b + c * k * Psi / Hp + dtaudx * R * (3 * Theta[1] + v_b);
+  dv_bdx         = - v_b - c * k * Psi / Hp + dtaudx * R * (3 * Theta[1] + v_b);
 
   // SET: Photon multipoles (Theta_ell)
   dThetadx[0] = - c * k * Theta[1] / Hp - dPhidx;
+
   dThetadx[1] = ck_over_Hp * Theta[0] / 3.0 - ck_over_Hp * 2.0 * Theta[2] / 3.0
                 + ck_over_Hp * Psi / 3.0 + dtaudx * (Theta[1] + v_b / 3.0);
+
   dThetadx[2] = ck_over_Hp * 2 * Theta[2-1] / (2 * 2 + 1) 
                   - ck_over_Hp * (2 + 1) * Theta[2+1] / (2 * 2 + 1)
                   + dtaudx * (Theta[2] - Theta[2] / 10.0);
@@ -795,9 +792,9 @@ void Perturbations::output(const double k, const std::string filename) const{
     fp << get_delta_cdm(x,k)  << " ";
     fp << get_v_b(x,k)        << " ";
     fp << get_v_cdm(x, k)     << " ";
-    //fp << get_Theta(x,k,0)   << " ";
-    //fp << get_Theta(x,k,1)   << " ";
-    //fp << get_Theta(x,k,2)   << " ";
+    fp << get_Theta(x,k,0)   << " ";
+    fp << get_Theta(x,k,1)   << " ";
+    fp << get_Theta(x,k,2)   << " ";
     //fp << get_Source_T(x,k)  << " ";
     //fp << get_Source_T(x,k) * Utils::j_ell(5,   arg)           << " ";
     //fp << get_Source_T(x,k) * Utils::j_ell(50,  arg)           << " ";
