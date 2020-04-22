@@ -102,18 +102,15 @@ void Perturbations::integrate_perturbations(){
     auto delta_cdm_tc   = tc_ODE.get_data_by_component(Constants.ind_deltacdm_tc);
     auto v_cdm_tc       = tc_ODE.get_data_by_component(Constants.ind_vcdm_tc);
     auto v_b_tc         = tc_ODE.get_data_by_component(Constants.ind_vb_tc);
-    auto theta_tc       = tc_ODE.get_data_by_component(Constants.ind_start_theta_tc);
-    //std::cout << "tc_ode solved" << std::endl;
-       
-    for (int ell = 0; ell < 2; ell++) {
-      auto theta_tc       = tc_ODE.get_data_by_component(Constants.ind_start_theta_tc + ell);
-      for (int ix = 0; ix < x_end_index; ix++) {
-        Theta[ell][ix + n_x * ik] = theta_tc[ix];
-        //std::cout << Theta[ell][ix + n_x * ik] << std::endl;
-      }
-    }
+    auto theta0_tc       = tc_ODE.get_data_by_component(Constants.ind_start_theta_tc);
+    auto theta1_tc       = tc_ODE.get_data_by_component(Constants.ind_start_theta_tc + 1);
+    
+
+
 
     for (int ix = 0; ix < x_end_index; ix++) {
+        Theta[0][ix + n_x * ik]   = theta0_tc[ix];
+        Theta[1][ix + n_x * ik]   = theta1_tc[ix];
         Phi[ix + n_x * ik]        = Phi_tc[ix];
         delta_b[ix + n_x * ik]    = delta_b_tc[ix];
         delta_cdm[ix + n_x * ik]  = delta_cdm_tc[ix];
@@ -179,6 +176,7 @@ void Perturbations::integrate_perturbations(){
         v_b[x_end_index + ix + n_x * ik]        = v_b_after[ix];
         v_cdm[x_end_index + ix + n_x * ik]      = v_cdm_after[ix];
     }
+
     for (int ell = 0; ell < Constants.n_ell_theta; ell++) {
       auto theta_after       = full_ODE.get_data_by_component(Constants.ind_start_theta + ell);
       for (int ix = 0; ix < n_x - x_end_index; ix ++) {
@@ -433,7 +431,7 @@ std::pair<double,int> Perturbations::get_tight_coupling_time(const double k) con
     if (std::fabs(dtaudx) < 10 * std::min(1.0, ck_over_Hp)) {   
       break;
     } 
-    if (x_arr[i] > -7.16) {
+    if (rec->Xe_of_x(x_arr[i]) < 0.99) {
       break;
     }
   }
