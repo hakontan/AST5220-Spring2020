@@ -57,7 +57,7 @@ where $\delta_{\ell,2}$ is the kroenecker-delta and $\eta(x)$ is the conformal t
     \Phi^\prime &= \Psi - \frac{c^2k^2}{3\mathcal{H}^2} \Phi + \frac{H_0^2}{2\mathcal{H}^2}
     \left[\Omega_{\rm CDM} e^{-x} \delta_{\rm CDM} + \Omega_{b,0} e^{-x} \delta_b + 4\Omega_{r,0}
     a^{-2}\Theta_0\right] \\
-    \Psi &= -\Phi - \frac{12H_0^2}{c^2k^2e^{2x}}\Omega_{r,0}\Theta_2, \\
+    \Psi &= -\Phi - \frac{12H_0^2}{c^2k^2e^{2x}}\Omega_{r,0}\Theta_2,\label{eq:psi} \\
 \end{align}
 where $R = \frac{4\Omega_{r,O}}{3\Omega_{b,0}e^x}$. These equations apply as they are written when we have exited the tight coupling regime. In the tight coupling regime, as described earlier, multipoles larger than $\ell=1$ have their gradients washed out. This gives the following changes to the set of equations 
 \begin{align}
@@ -110,6 +110,10 @@ When solving the equations for the metric perturbations $\Phi$ and $\Psi$ for th
     \caption{Figure showing the monopole monopole $\theta_0$ as well as the density parameter for baryons $\delta_b$ for a fourier mode that completes a few oscillations before recombination. The first two maximas of the monopole is plottet as straight lines to illustrate overlap with maximas in the baryon density fluctuations.}
     \label{fig:comp0}
 \end{figure}
+\section{Discussion}\label{sec:discussion}
+When studying the result for the metric perturbations $\Phi$ and $\Psi$, as shown in figure \ref{fig:Psi}, one can clearly see that horizon entry for the different scales has a significant impact on the behavior. Due to the second term in equation \ref{eq:psi} being much smaller than $\Phi$ we have approximately . When looking at $\Phi$, which represents the gravitational potential, one can see that the smaller the scale the earlier it enters the horizon and starts to decrease. One noticeable difference is horizon entry relative to $a_{eq}$. During the radiation dominated era.
+
+The evolution of the density parameter, illustrated in figure \ref{fig:delta}, Shows clear differences on the different scales. One can see that the density starts to increase for the smaller scales first as they enter the horizon. Another interesting feature is the change of gradient as the universe transitions from radiation to matter domination. For $k=0.3$ one can see that it enters the horizon well inside the radiation dominated era with a steep slope. As we transition from radiation to matter domination the slope gets gradually smaller untill we get a constant slope again when we have full matter domination. From milestone I, we saw that this transition happened over an extended period of time which is also reflected in this plot. For the largest scales that enter well after $a_{eq}$, when the universe is fully matter dominated, we see that the density starts to increase with a similar slope as the smaller scales has in the matter dominated era. By looking at the evolution of the velocity paramter, as shown in figure \ref{fig:v}, one can see that the velocity is relatively small, but grows to the order of $10^0$ as they enter the horizon. Just as for the density parameter the different regimes are evident in the slopes of the velocity for the different modes.
 
 \bibliography{ref.bib}
 \bibliographystyle{aasjournal}
