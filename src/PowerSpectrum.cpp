@@ -61,23 +61,25 @@ void PowerSpectrum::generate_bessel_function_splines(){
   
   // Make storage for the splines
   j_ell_splines = std::vector<Spline>(ells.size());
-    
+  
   //=============================================================================
   // TODO: Compute splines for bessel functions j_ell(z)
   // Choose a suitable range for each ell
   // NB: you don't want to go larger than z ~ 40000, then the bessel routines
   // might break down. Use j_ell(z) = Utils::j_ell(ell, z)
   //=============================================================================
-
+  double end_pts = 5000.0;
+  int n_pts = 1000;
+  Vector x_array = Utils::linspace(0.0, end_pts, n_pts);
+  Vector j_ell_arr(n_pts);
   for(size_t i = 0; i < ells.size(); i++){
     const int ell = ells[i];
+    for(int j = 0; j < n_pts; j++) {
+      j_ell_arr[j] = Utils::j_ell(ell, x_array[j]);
 
-    // ...
-    // ...
-    // ...
-    // ...
-
+    j_ell_splines[i].create(x_array, j_ell_arr);
     // Make the j_ell_splines[i] spline
+    }
   }
 
   Utils::EndTiming("besselspline");
@@ -92,11 +94,37 @@ Vector2D PowerSpectrum::line_of_sight_integration_single(
     Vector & k_array, 
     std::function<double(double,double)> &source_function){
   Utils::StartTiming("lineofsight");
-
+  
   // Make storage for the results
   Vector2D result = Vector2D(ells.size(), Vector(k_array.size()));
 
-  for(size_t ik = 0; ik < k_array.size(); ik++){
+  double dx;
+  double eta;
+  double eta_nm1;
+  double f_n;
+  double f_nm1;
+  double Integral = 0.0;
+  double eta_0 = cosmo->eta_of_x(0);
+
+  Vector x_array = Utils::linspace(-13, 0, 10000);
+  for (size_t ell = 0; ell < ells.size(); ell ++) {
+    for(size_t ik = 0; ik < k_array.size(); ik++) {
+      for(int j = 1; j < 10000; j++) {
+        // Assigning timestep for given k (Callin (2006))
+        dx = 2 * M_PI * cosmo->Hp_of_x(x_array[j]) / (10.0 * ik);
+        // Assigning variables for trapezoidal rule
+        eta     = cosmo->eta_of_x(x_array[j]);
+        eta_nm1 = cosmo->eta_of_x(x_array[j-1]);
+        f_n     = source_function(x_array[j], ik) * j_ell_splines[ell](ik*(eta - eta_0));
+        f_nm1   = source_function(x_array[j-1], ik) * j_ell_splines[ell](ik*(eta_nm1 - eta_0));
+        // Trapezoidal rule
+        Integral += 0.5 * (f_nm1 + f_n) * dx;
+      }
+      result[ell, ik] = Integral;
+      Integral = 0.0;
+    }
+  }
+  
 
     //=============================================================================
     // TODO: Implement to solve for the general line of sight integral 
@@ -106,9 +134,9 @@ Vector2D PowerSpectrum::line_of_sight_integration_single(
     // ...
     // ...
     // ...
-
+    
     // Store the result for Source_ell(k) in results[ell][ik]
-  }
+  
 
   Utils::EndTiming("lineofsight");
   return result;
