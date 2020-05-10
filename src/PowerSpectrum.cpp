@@ -97,6 +97,7 @@ Vector2D PowerSpectrum::line_of_sight_integration_single(
   
   // Make storage for the results
   Vector2D result = Vector2D(ells.size(), Vector(k_array.size()));
+  //Vector2D result(ells.size(), Vector(k_array.size()));
 
   double dx;
   double eta;
@@ -105,11 +106,15 @@ Vector2D PowerSpectrum::line_of_sight_integration_single(
   double f_nm1;
   double Integral = 0.0;
   double eta_0 = cosmo->eta_of_x(0);
+  int npts;
+  Vector x_array;
 
-  Vector x_array = Utils::linspace(-13, 0, 10000);
-  for (size_t ell = 0; ell < ells.size(); ell ++) {
-    for(size_t ik = 0; ik < k_array.size(); ik++) {
-      for(int j = 1; j < 10000; j++) {
+  for (int ell = 0; ell < ells.size(); ell ++) {
+    for(int ik = 0; ik < k_array.size(); ik++) {
+      // Number of points for the x-grid (Callin (2006))
+      npts = (int) std::round(10 * ik * eta_0 / (2 * M_PI));
+      x_array  = Utils::linspace(Constants.x_start, Constants.x_end, npts);
+      for(int j = 1; j < npts; j++) {
         // Assigning timestep for given k (Callin (2006))
         dx = 2 * M_PI * cosmo->Hp_of_x(x_array[j]) / (10.0 * ik);
         // Assigning variables for trapezoidal rule
