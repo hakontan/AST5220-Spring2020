@@ -71,7 +71,7 @@ void PowerSpectrum::generate_bessel_function_splines(){
   // might break down. Use j_ell(z) = Utils::j_ell(ell, z)
   //=============================================================================
   double end_pts = 5000.0;
-  int n_pts = 1000;
+  int n_pts = 10000;
   Vector x_array = Utils::linspace(0.0, end_pts, n_pts);
   Vector j_ell_arr(n_pts);
   for(size_t i = 0; i < ells.size(); i++){
@@ -79,9 +79,9 @@ void PowerSpectrum::generate_bessel_function_splines(){
     for(int j = 0; j < n_pts; j++) {
       j_ell_arr[j] = Utils::j_ell(ell, x_array[j]);
     }
+    // Make the j_ell_splines[i] spline
     j_ell_splines[i].create(x_array, j_ell_arr);
 
-    // Make the j_ell_splines[i] spline
   }
 
   Utils::EndTiming("besselspline");
@@ -126,13 +126,10 @@ Vector2D PowerSpectrum::line_of_sight_integration_single(
     };
 
     ODESolver ode;
-    double hstart = 1e-3, abserr = 1e-10, relerr = 1e-10;
-    ode.set_accuracy(hstart, abserr, relerr);
     ode.solve(dthetaelldx, x_array, theta_ic, gsl_odeiv2_step_rkf45);
     auto sol = ode.get_data_by_component(0);
-    result[i][ik] = sol[Npts-1];
-    std::cout << result[i][ik] << std::endl;
     // Store the result for Source_ell(k) in results[ell][ik]
+    result[i][ik] = sol[Npts-1];
     }
   }
 
@@ -168,17 +165,6 @@ void PowerSpectrum::line_of_sight_integration(Vector & k_array){
   for (int i= 0; i<ells.size(); i++) {
     thetaT_ell_of_k_spline[i].create(k_array, thetaT_ell_of_k[i]);
   }
-  //============================================================================
-  // TODO: Solve for ThetaE_ell(k) and spline
-  //============================================================================
-  if(Constants.polarization){
-
-    // ...
-    // ...
-    // ...
-    // ...
-
-  }
 }
 
 //====================================================
@@ -207,12 +193,10 @@ Vector PowerSpectrum::solve_for_cell(
     };
     
     ODESolver ode;
-    double hstart = 1e-3, abserr = 1e-10, relerr = 1e-10;
-    ode.set_accuracy(hstart, abserr, relerr);
     ode.solve(dCelldlogk, log_k_array, Cell_ic, gsl_odeiv2_step_rkf45);
     auto sol = ode.get_data_by_component(0);
-    result[i] = sol[n_k-1];
     // Store the result for Source_ell(k) in results[ell][ik]
+    result[i] = sol[n_k-1];
 
   }
   return result;
@@ -236,11 +220,9 @@ double PowerSpectrum::get_matter_power_spectrum(const double x, const double k_m
   //=============================================================================
   // TODO: Compute the matter power spectrum
   //=============================================================================
-
-  // ...
-  // ...
-  // ...
-
+  double DeltaM = 2.0 * std::exp(x)*Constants.c * Constants.c * k_mpc * k_mpc * pert->get_Phi(x, k_mpc)
+                  / (3.0 * cosmo->get_OmegaCDM(0) * cosmo->get_H0() * cosmo->get_H0());
+  pofk = DeltaM * primordial_power_spectrum(k_mpc);
   return pofk;
 }
 
@@ -263,6 +245,7 @@ double PowerSpectrum::get_cell_EE(const double ell) const{
 
 void PowerSpectrum::output(std::string filename) const{
   // Output in standard units of muK^2
+  /*
   std::ofstream fp(filename.c_str());
   const int ellmax = int(ells[ells.size()-1]);
   auto ellvalues = Utils::linspace(2, ellmax, ellmax-1);
@@ -273,11 +256,18 @@ void PowerSpectrum::output(std::string filename) const{
     double normfactorL = (ell * (ell+1)) * (ell * (ell+1)) / (2.0 * M_PI);
     fp << ell                                 << " ";
     fp << cell_TT_spline( ell ) * normfactor  << " ";
-    if(Constants.polarization){
-      fp << cell_EE_spline( ell ) * normfactor  << " ";
-      fp << cell_TE_spline( ell ) * normfactor  << " ";
-    }
     fp << "\n";
   };
   std::for_each(ellvalues.begin(), ellvalues.end(), print_data);
+  */
+  // Output matter power spectrum
+  std::ofstream fp_matter("matter_powerspec.txt");
+  auto kvalues = Utils::linspace(Constants.k_min, Constants.k_max , 1000);
+  auto print_data_matter = [&] (const double k) {
+    fp_matter << k                                    << " ";
+    fp_matter << get_matter_power_spectrum(0.0, k)    << " ";
+    fp_matter << "\n";
+  };
+  std::for_each(kvalues.begin(), kvalues.end(), print_data_matter);
+
 }

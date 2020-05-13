@@ -169,7 +169,6 @@ void Perturbations::integrate_perturbations(){
     
       
     for (int ix = 0; ix < n_x - x_end_index; ix ++) {
-        //std::cout << ix << std::endl;
         Phi[x_end_index + ix + n_x * ik]        = Phi_after[ix];
         delta_b[x_end_index + ix + n_x * ik]    = delta_b_after[ix];
         delta_cdm[x_end_index + ix + n_x * ik]  = delta_cdm_after[ix];
@@ -221,9 +220,6 @@ void Perturbations::integrate_perturbations(){
   //=============================================================================
   // TODO: Make all splines needed: Theta0,Theta1,Theta2,Phi,Psi,...
   //=============================================================================
-  // ...
-  // ...
-  // ...
   Psi_spline.create(x_array, k_array, Psi, "Psi_spline");
   Phi_spline.create(x_array, k_array, Phi, "Phi_spline");
   delta_cdm_spline.create(x_array, k_array, delta_cdm, "delta_cdm_spline");
@@ -368,9 +364,6 @@ Vector Perturbations::set_ic_after_tight_coupling(
   // NB: remember that we have different number of multipoles in the two
   // regimes so be careful when assigning from the tc array
   //=============================================================================
-  // ...
-  // ...
-  // ...
 
   // SET: Scalar quantities (Gravitational potential, baryons and CDM)
 
@@ -435,12 +428,11 @@ std::pair<double,int> Perturbations::get_tight_coupling_time(const double k) con
       break;
     }
   }
-  //std::cout << x_tight_coupling_end << std::endl;
   return std::pair<double,int>(x_tight_coupling_end, c);
 }
 
 //====================================================
-// After integrsating the perturbation compute the
+// After integrating the perturbation compute the
 // source function(s)
 //====================================================
 void Perturbations::compute_source_functions(){
@@ -449,8 +441,7 @@ void Perturbations::compute_source_functions(){
   //=============================================================================
   // TODO: Make the x and k arrays to evaluate over and use to make the splines
   //=============================================================================
-  // ...
-  // ...
+
   Vector x_array = Utils::linspace(Constants.x_start, Constants.x_end, n_x);
   Vector k_array(n_k);
 
@@ -489,12 +480,18 @@ void Perturbations::compute_source_functions(){
       const double dHp_dx       = cosmo->dHpdx_of_x(x);
       const double ddHp_ddx     = cosmo->ddHpddx_of_x(x);
       const double tau          = rec->tau_of_x(x);
+      const double dtaudx       = rec->dtaudx_of_x(x);
+      const double ddtauddx     = rec->ddtauddx_of_x(x);
       const double g_tilde      = rec->g_tilde_of_x(x);
       const double dg_tildedx   = rec->dgdx_tilde_of_x(x);
       const double ddg_tildedxx = rec->ddgddx_tilde_of_x(x);
       const double theta_0      = get_Theta(x, k, 0);
+      const double theta_1      = get_Theta(x, k, 1);
       const double theta_2      = get_Theta(x, k, 2);
+      const double theta_3      = get_Theta(x, k, 3);
+      const double dtheta_1dx   = Theta_spline[1].deriv_x(x, k);
       const double dtheta_2dx   = Theta_spline[2].deriv_x(x, k);
+      const double dtheta_3dx   = Theta_spline[3].deriv_x(x, k);
       const double ddtheta_2dxx = Theta_spline[2].deriv_xx(x, k);
       const double Psi          = get_Psi(x, k);
       const double dPsi_dx      = Psi_spline.deriv_x(x, k);
@@ -507,22 +504,21 @@ void Perturbations::compute_source_functions(){
       const double term1      = g_tilde * (theta_0 + Psi + 0.25 * theta_2);
       const double term2      = std::exp(-tau) * (dPsi_dx - dPhi_dx);
       const double term3      = - (dHp_dx * g_tilde * v_b
-                             + dHp_dx * (dg_tildedx * v_b + dv_bdx * g_tilde))
-                             / (c * k);
+                                + Hp * (dg_tildedx * v_b + dv_bdx * g_tilde))
+                                / (c * k);
 
-      const double dHdxdgt2dx = dHp_dx * ((dHp_dx * g_tilde * theta_2)
-                                + Hp * (dg_tildedx * theta_2 + dtheta_2dx * g_tilde));   
-      const double term4_1 = dHp_dx * dHdxdgt2dx;
-      const double term4_01   = ddHp_ddx * g_tilde * theta_2
-                                + dHp_dx * (dg_tildedx * theta_2 + dtheta_2dx * g_tilde);
-      const double term4_02   = dHp_dx * dg_tildedx * theta_2
-                                + Hp * (ddg_tildedxx * theta_2 + g_tilde * dtheta_2dx);
-      const double term4_03   = dHp_dx * g_tilde * dtheta_2dx
-                                + dHp_dx * (ddtheta_2dxx * g_tilde + dg_tildedx * dtheta_2dx);
-      const double term4_2 = term4_01 + term4_02 + term4_03;                       
+      const double ddPIddx    = (2.0 * c * k / (5.0 * Hp)) *(-(dHp_dx / Hp) * theta_1 + dtheta_1dx)
+                                + (3.0 / 10) * (ddtauddx * theta_2 + dtaudx * dtheta_2dx)
+                                - (3.0 * k * c / (5.0 * Hp)) * (-(dHp_dx/Hp) * theta_3 + dtheta_3dx);
 
-      const double term4 = 3 * (term4_1 + Hp * term4_2)
-                           / (4 * c * c * k * k);     
+      const double term4_1    = (Hp * ddHp_ddx + dHp_dx * dHp_dx) * g_tilde * theta_2;
+      const double term4_2    = 3.0 * Hp * dHp_dx * (dg_tildedx * theta_2 + g_tilde * dtheta_2dx);
+      const double term4_3    = Hp * Hp * (ddg_tildedxx * theta_2 + 2.0 * dg_tildedx * dtheta_2dx
+                                + g_tilde * ddtheta_2dxx);
+      const double term4      = (3.0 / (4 * k * k * c * c)) * (term4_1 + term4_2 + term4_3);
+
+
+
       ST_array[index] = term1 + term2 + term3 + term4;
       // Polarization source
       if(Constants.polarization){
