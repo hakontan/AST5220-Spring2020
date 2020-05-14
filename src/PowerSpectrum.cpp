@@ -207,7 +207,7 @@ Vector PowerSpectrum::solve_for_cell(
 //====================================================
 
 double PowerSpectrum::primordial_power_spectrum(const double k) const{
-  return A_s * pow( Constants.Mpc * k / kpivot_mpc , n_s - 1.0);
+  return A_s * pow(Constants.Mpc * k / kpivot_mpc , n_s - 1.0);
 }
 
 //====================================================
@@ -220,9 +220,9 @@ double PowerSpectrum::get_matter_power_spectrum(const double x, const double k_m
   //=============================================================================
   // TODO: Compute the matter power spectrum
   //=============================================================================
-  double DeltaM = 2.0 * std::exp(x)*Constants.c * Constants.c * k_mpc * k_mpc * pert->get_Phi(x, k_mpc)
-                  / (3.0 * cosmo->get_OmegaCDM(0) * cosmo->get_H0() * cosmo->get_H0());
-  pofk = DeltaM * primordial_power_spectrum(k_mpc);
+  double DeltaM = 2.0 * std::exp(x) * Constants.c * Constants.c * k_mpc * k_mpc * pert->get_Phi(x, k_mpc) 
+                  / (3.0 * (cosmo->get_OmegaCDM(0) + cosmo->get_OmegaB(0)) * cosmo->get_H0() * cosmo->get_H0());
+  pofk = DeltaM * DeltaM * primordial_power_spectrum(k_mpc);
   return pofk;
 }
 
