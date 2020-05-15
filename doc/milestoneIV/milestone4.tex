@@ -1,0 +1,79 @@
+\documentclass[onecolumn]{aastex62}
+
+
+\newcommand{\vdag}{(v)^\dagger}
+\newcommand\aastex{AAS\TeX}
+\newcommand\latex{La\TeX}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage{physics}
+\usepackage{hyperref}
+\usepackage{natbib}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+
+\begin{document}
+
+\title{\Large Milestone IV:\\Computing the CMB power spectrum.}
+
+\author{Håkon Tansem}
+
+\section{Introduction} \label{sec:intro}
+This is the fourth and last milestone in a four milestone project where the end goal is to compute the CMB power spectrum. We have previously studied the expansion history of the universe and the recombination history culminating in calculating and studying the evolution of the initial perturbations given by the Einstein and Boltzmann equations. In this last milestone we will combine the knowledge gained from the previous three milestones and finally compute the CMB power spectrum. We will also use our computed parameters to calculate the matter power spectrum to study how matter overdensities have evolved for different cosmic scales.
+\section{Method} \label{sec:method}
+The CMB temperature field is given by
+\begin{equation}
+    T(\hat{n}) = \sum_{\ell m} a_{\ell m} Y_{\ell m}(\hat{n}),
+\end{equation}
+where $\hat{n}$ is the direction on the sky, $Y_{\ell m}$ is the spherical harmonics and $a_{\ell m}$ is coefficient of the spherical harmonics. We want to study which scales are most influential when studying the sky map. This is defined by the CMB power spectrum given by 
+\begin{equation}
+    C_\ell \equiv \langle |a_{\ell m}|^2 \rangle = \langle a_{\ell m}a_{\ell m}^* \rangle.
+\end{equation}
+In Milestone III, we computed the evolution of the temperature field $\theta_\ell(k)$ for $\ell=0$ up to $\ell=6$. We want to know the value of the temperature field today at $x=0$. In order to compute a reasonable portion of the power spectrum, so that we can study the most important effects, we need multipoles up to at least $\ell=1200$. This would make the system of equations in Milestone III very large. This is when we will use a method called line of sight integration developed by Zaldarriaga and Seljak. For a brief derivation of this, see \cite{callin2006calculate:2006}. The basic idea behind this is to 
+start with the expression for $\frac{d\theta}{dx}$, integrate it and then expand in multipoles at the end. This gives us the integral
+\begin{equation}\label{eq:theta_int}
+    \Theta_\ell(k, x=0) = \int_{-\infty}^{0} \tilde{S}(k,x)
+              j_\ell[k(\eta_0-\eta)] dx,
+\end{equation}
+where $j_\ell$ is the spherical bessel function and $\tilde{S}(k,x)$ is the source function given by
+\begin{equation}
+    \tilde{S}(k,x) = \tilde{g}\left[ \Theta_0 + \Psi + \frac{1}{4}\theta_2\right] +
+              e^{-\tau} \left[\Psi^\prime-\Phi^\prime\right] -
+              \frac{1}{ck}\frac{d}{dx}(\mathcal{H}\tilde{g}v_b) + \frac{3}{4c^2k^2} \frac{d}{dx}
+              \left[\mathcal{H}\frac{d}{dx} (\mathcal{H}\tilde{g}\theta_2)\right]
+\end{equation}
+\cite{WintherIV:2020}. (Beskriv leddene?) All parameters in the source function are explained in the earlier milestones. The spherical bessel function has been pre-calculated for arguments between $0$ and $5000$ with $10000$ linearly space points between them for every ell used in the integral and then splined. This allows us to evaluate the bessel function for all arbitrary $k(\eta_0-\eta)$ values for every $\ell$ we have created a spline for. In our model the integral in equation \ref{eq:theta_int} will be implemented as an ODE given as
+\begin{equation}\label{eq:theta_ODE}
+    \frac{d\Theta_\ell(k, x)}{dx} = \tilde{S}(k,x) j_\ell[k(\eta_0-\eta)],\,\,\, \Theta_\ell(k, -\infty) = 0.
+\end{equation}
+This equation is then solved for every $k$ in a logarithmically spaced grid with $k_{min}=0.00001/$Mpc and $k_{max}=0.1/$Mpc with $2000$ values and for every k we solve for $63$ relatively evenly distributed $\ell$ values between $2$ and $2000$. The solution is then splined so that we can evaluate $\theta_\ell(k)$ for all $\ell$ values we used and an arbitrary $k$ in the interval we used to solve the ODE. Now that we have the actual temperature field $\theta_\ell(k)$ we can start solving for the power spectrum $C_\ell$. The $C_\ell$ will be an integral over the fourier coefficients $\theta_\ell$ squared, as well as the primordial power spectrum $P_{primordial}(k)$. This gives us the integral for $C_\ell$
+\begin{equation}
+    C_\ell = \frac{2}{\pi}\int k^2P_{\rm primordial}(k) \Theta_\ell^2(k)dk.
+\end{equation}
+The primordial power spectrum is given as
+\begin{equation}
+    \frac{k^3}{2\pi^2} P_{\rm primordial}(k) = A_s \left(\frac{k}{k_{\rm pivot}}\right)^{n_s-1},
+\end{equation}
+where $n_s$ is the spectral index which we set $n_s=0.96$ $k_{\rm pivot}$ is a scale with a given amplitude $A_s$. In our model we will use $k_{\rm pivot} = 0.05/$Mpc and $A_s=10^{-9}$. This gives our final expression for $C_\ell$ aasjournal
+\begin{equation}\label{eq:Cell_int}
+    C_\ell = 4\pi \int_0^{\infty} A_s \left(\frac{k}{k_{\rm pivot}}\right)^{n_s-1} \Theta_{\ell}^2(k) \frac{dk}{k}
+\end{equation}
+\cite{WintherIV:2020}. In our model we will solve this, like we did with $\theta_{\ell}(k)$, using and ODE approach rewriting the integral in equation \ref{eq:Cell_int} to 
+\begin{equation}\label{eq:Cell_ODE}
+    \frac{dC_{\ell}}{dlogk} = 4 \pi P_{\rm primordial}(k) \theta_{\ell}(k)^2.
+\end{equation}
+This equation is solved Using the same $k$-values and $\ell$ as for the $\theta_{\ell}(k)$ ODE given in equation \ref{eq:theta_ODE}. The result is then splined so that we now can evaluate $C_{\ell}$ for every every between $2$ and $2000$.
+\section{Results}
+\label{sec:results}
+
+
+\section{Discussion}\label{sec:discussion}
+
+\bibliography{ref.bib}
+\bibliographystyle{aasjournal}
+%\begin{thebibliography}{}
+%\end{thebibliography}
+\end{document}
+
+% End of file `sample62.tex'.
