@@ -132,9 +132,9 @@ void Perturbations::integrate_perturbations(){
     
     for (int ix = 0; ix < x_end_index; ix++) {
       Psi[ix + n_x * ik]       = - Phi_tc[ix]
-                                  - 12.0 * cosmo->get_H0() * cosmo->get_H0() * cosmo->get_OmegaR(0)
-                                  * Theta[2][ix + n_x * ik]
-                                  / (Constants.c * Constants.c * k * k * std::exp(x_array[ix]) * std::exp(x_array[ix]));
+                                 - 12.0 * cosmo->get_H0() * cosmo->get_H0() * cosmo->get_OmegaR(0)
+                                 * Theta[2][ix + n_x * ik]
+                                 / (Constants.c * Constants.c * k * k * std::exp(x_array[ix]) * std::exp(x_array[ix]));
     }
   
 
@@ -371,7 +371,7 @@ Vector Perturbations::set_ic_after_tight_coupling(
   double delta_cdm_init = delta_cdm_tc;
   double v_cdm_init     = v_cdm_tc;
   double delta_b_init   = delta_b_tc;
-  double v_b_init       = v_cdm_tc;
+  double v_b_init       = v_b_tc;
 
   Phi                   = Phi_init;
   delta_cdm             = delta_cdm_init;
@@ -691,15 +691,15 @@ int Perturbations::rhs_full_ode(double x, double k, const double *y, double *dyd
   dThetadx[1] = ck_over_Hp * Theta[0] / 3.0 - ck_over_Hp * 2.0 * Theta[2] / 3.0
                 + ck_over_Hp * Psi / 3.0 + dtaudx * (Theta[1] + v_b / 3.0);
 
-  dThetadx[2] = ck_over_Hp * 2 * Theta[2-1] / (2 * 2 + 1) 
-                  - ck_over_Hp * (2 + 1) * Theta[2+1] / (2 * 2 + 1)
+  dThetadx[2] = ck_over_Hp * 2.0 * Theta[2-1] / (2.0 * 2.0 + 1.0) 
+                  - ck_over_Hp * (2.0 + 1.0) * Theta[2+1] / (2.0 * 2.0 + 1.0)
                   + dtaudx * (Theta[2] - Theta[2] / 10.0);
   
 
   int last_ell = Constants.n_ell_theta - 1;
   for (int ell = 3; ell < last_ell; ell++) {
-    dThetadx[ell] = ck_over_Hp * ell * Theta[ell-1] / (2 * ell + 1) 
-                    - ck_over_Hp * (ell + 1) * Theta[ell+1] / (2 * ell + 1)
+    dThetadx[ell] = ck_over_Hp * ell * Theta[ell-1] / (2.0 * ell + 1.0) 
+                    - ck_over_Hp * (ell + 1.0) * Theta[ell+1] / (2.0 * ell + 1.0)
                     + dtaudx * Theta[ell];
   }
   
