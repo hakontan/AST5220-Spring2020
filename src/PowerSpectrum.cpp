@@ -126,9 +126,9 @@ Vector2D PowerSpectrum::line_of_sight_integration_single(
     };
 
     ODESolver ode;
-    double hstart = 1e-3, abserr = 1e-10, relerr = 1e-10;
+    double hstart = 1e-3, abserr = 1e-6, relerr = 1e-6;
     ode.set_accuracy(hstart, abserr, relerr);
-    ode.solve(dthetaelldx, x_array, theta_ic, gsl_odeiv2_step_rkf45);
+    ode.solve(dthetaelldx, x_array, theta_ic, gsl_odeiv2_step_rk2);
     auto sol = ode.get_data_by_component(0);
     // Store the result for Source_ell(k) in results[ell][ik]
     result[i][ik] = sol[Npts-1];
@@ -144,7 +144,6 @@ Vector2D PowerSpectrum::line_of_sight_integration_single(
 //====================================================
 void PowerSpectrum::line_of_sight_integration(Vector & k_array){
   const int n_k        = k_array.size();
-  const int n          = 200;
   const int nells      = ells.size();
   
   // Make storage for the splines we are to create
@@ -195,9 +194,9 @@ Vector PowerSpectrum::solve_for_cell(
     };
     
     ODESolver ode;
-    double hstart = 1e-3, abserr = 1e-10, relerr = 1e-10;
+    double hstart = 1e-3, abserr = 1e-6, relerr = 1e-6;
     ode.set_accuracy(hstart, abserr, relerr);
-    ode.solve(dCelldlogk, log_k_array, Cell_ic, gsl_odeiv2_step_rkf45);
+    ode.solve(dCelldlogk, log_k_array, Cell_ic, gsl_odeiv2_step_rk2);
     auto sol = ode.get_data_by_component(0);
     // Store the result for Source_ell(k) in results[ell][ik]
     result[i] = sol[n_k-1];
@@ -284,10 +283,10 @@ void PowerSpectrum::output(std::string filename) const{
   Vector ellvalues_t{6, 500, 1000, 1500};
   auto print_data_transfer = [&] (const double k) {
     fp_transfer <<  k                              << " ";
-    fp_transfer <<  thetaT_ell_of_k_spline[4](k)  << " ";
-    fp_transfer <<  thetaT_ell_of_k_spline[32](k)  << " ";
-    fp_transfer <<  thetaT_ell_of_k_spline[42](k)  << " ";
-    fp_transfer <<  thetaT_ell_of_k_spline[52](k)  << " ";
+    fp_transfer <<  thetaT_ell_of_k_spline[25](k)  << " ";
+    fp_transfer <<  thetaT_ell_of_k_spline[29](k)  << " ";
+    fp_transfer <<  thetaT_ell_of_k_spline[5](k)  << " ";
+    fp_transfer <<  thetaT_ell_of_k_spline[55](k)  << " ";
     fp_transfer << "\n";
   };
   std::for_each(kvalues_transfer.begin(), kvalues_transfer.end(), print_data_transfer);

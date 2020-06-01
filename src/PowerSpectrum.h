@@ -26,9 +26,9 @@ class PowerSpectrum {
     double A_s        = 2e-9;
     double n_s        = 0.96;
     double kpivot_mpc = 0.05;
-
+ 
     // The k-values we compute Theta_ell(k) etc. for
-    const int n_k      = 100;
+    const int n_k      = 1000;
     const double k_min = Constants.k_min;
     const double k_max = Constants.k_max;
     

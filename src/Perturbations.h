@@ -20,7 +20,7 @@ class Perturbations{
     RecombinationHistory *rec  = nullptr;
    
     // The scales we integrate over
-    const int n_k        = 100;
+    const int n_k        = 2000;
     const double k_min   = Constants.k_min;
     const double k_max   = Constants.k_max;
     
@@ -43,6 +43,10 @@ class Perturbations{
    
     // Splines of source functions (ST for temperature; SE for polarization)
     Spline2D ST_spline{"ST_spline"};
+    Spline2D term1_spline{"t1"};
+    Spline2D term2_spline{"t2"};
+    Spline2D term3_spline{"t3"};
+    Spline2D term4_spline{"t4"};
     Spline2D SE_spline{"SE_spline"};
     
     // Splines of mulipole quantities
