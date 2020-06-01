@@ -4,7 +4,7 @@ import matplotlib.image as mpimg
 import astropy.units as unit
 import astropy.constants as const
 
-#plt.style.use("")
+
 
 fonts = {
     "font.family": "serif",
@@ -19,6 +19,7 @@ plt.rcParams.update(fonts)
 
 save_directory = "../doc/milestoneII/figures/"
 data = np.loadtxt("recombination.txt")
+
 
 x = data[:, 0]
 Xe_of_x = data[:, 1]
@@ -43,6 +44,7 @@ ax.semilogy(x, ne_of_x)
 ax.set_xlabel(r"$x=$log$(a)$")
 ax.set_ylabel(r"$kg/m^3$")
 ax.set_title("Free electron density")
+ax.grid()
 fig.savefig(save_directory + "ne.pdf", dpi=1000)
 
 fig, ax = plt.subplots() 
@@ -52,6 +54,7 @@ ax.semilogy(x[10: -10], ddtauddx_of_x[10:-10], label=r"$\frac{d^2\tau(x)}{dx^2}$
 ax.set_xlabel(r"$x=$log$(a)$")
 ax.set_title("Optical depth and derivatives")
 ax.legend()
+ax.grid()
 fig.savefig(save_directory + "tau.pdf", dpi=1000)
 
 fig, ax = plt.subplots()
@@ -59,6 +62,7 @@ ax.plot(x, g_of_x)
 ax.set_xlabel(r"$x=$log$(a)$")
 ax.set_ylabel(r"$g(x)$")
 ax.set_title("Visibility function")
+ax.grid()
 fig.savefig(save_directory + "g.pdf", dpi=1000)
 
 fig, ax = plt.subplots()
@@ -66,6 +70,7 @@ ax.plot(x, dgdx_of_x)
 ax.set_xlabel(r"$x=$log$(a)$")
 ax.set_ylabel(r"$\frac{dg(x)}{dx}$")
 ax.set_title("visibility function derivative")
+ax.grid()
 fig.savefig(save_directory + "dgdx.pdf", dpi=1000)
 
 fig, ax = plt.subplots()
@@ -73,6 +78,7 @@ ax.plot(x, ddgddx_of_x)
 ax.set_xlabel(r"$x=$log$(a)$")
 ax.set_ylabel(r"$\frac{d^2g(x)}{dx^2}$")
 ax.set_title("visibility function double derivative")
+ax.grid()
 fig.savefig(save_directory + "ddgdxx.pdf", dpi=1000)
-plt.show()
+
 
