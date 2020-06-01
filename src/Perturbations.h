@@ -63,7 +63,7 @@ class Perturbations{
     int rhs_tight_coupling_ode(double x, double k, const double *y, double *dydx);
     
     // Compute the time when tight coupling ends
-    double get_tight_coupling_time(const double k) const;
+    std::pair<double,int> get_tight_coupling_time(const double k) const;
     
     //==========================================================
     // [2] The full ODE system 

@@ -52,7 +52,9 @@ class RecombinationHistory{
     Spline log_Xe_of_x_spline{"Xe"};
     Spline log_ne_of_x_spline{"ne"};
     Spline tau_of_x_spline{"tau"}; 
+    Spline dtaudx_of_x_spline{"dtaudx"};
     Spline g_tilde_of_x_spline{"g"};  
+    Spline saha_sol_of_x_spline{"saha"};
 
   public:
 
@@ -69,6 +71,9 @@ class RecombinationHistory{
     // Print some useful info about the class
     void info() const;
 
+    // Print the saha equation at a hardcoded x-value
+    void saha_at_hardcodedx() const;
+
     // Output some data to file
     void output(const std::string filename) const;
 
@@ -79,6 +84,7 @@ class RecombinationHistory{
     double g_tilde_of_x(double x) const;
     double dgdx_tilde_of_x(double x) const;
     double ddgddx_tilde_of_x(double x) const;
+    double Saha_Xe_of_x(double x) const;
     double Xe_of_x(double x) const;
     double ne_of_x(double x) const;
     double get_Yp() const;

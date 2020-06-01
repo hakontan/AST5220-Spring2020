@@ -49,7 +49,7 @@ extern struct ConstantsAndUnits {
   const double k_max = 0.3     / Mpc;
   
   // Min and max x-value
-  const double x_start = log(1e-6);
+  const double x_start = log(1e-8);
   const double x_end   = 0.0;
 
   // Include polarization and/or neutrinos?
@@ -61,7 +61,7 @@ extern struct ConstantsAndUnits {
   const int n_ell_theta         = 8;
   const int n_ell_thetap        = 8 * polarization;
   const int n_ell_neutrinos     = 8 * neutrinos;
-  const int n_ell_tot_full      = n_scalars + n_ell_theta + n_ell_thetap + n_ell_neutrinos;
+  const int n_ell_tot_full      = n_scalars + n_ell_theta;// + n_ell_thetap + n_ell_neutrinos;
   const int ind_deltacdm        = 0; 
   const int ind_deltab          = 1;
   const int ind_vcdm            = 2;

@@ -88,4 +88,8 @@ ax.grid()
 fig.savefig("../doc/milestoneI/figures/densityparams.pdf", dpi=1000)
 
 
+a_eq = x[np.argmin(np.abs((Omega_B + Omega_CDM) - Omega_R))]
+print(a_eq)
+
+
 plt.show()
