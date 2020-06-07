@@ -66,7 +66,48 @@ where $n_s$ is the spectral index which we set $n_s=0.96$ $k_{\rm pivot}$ is a s
 This equation is solved Using the same $k$-values and $\ell$ as for the $\theta_{\ell}(k)$ ODE given in equation \ref{eq:theta_ODE}. The result is then splined so that we now can evaluate $C_{\ell}$ for every every between $2$ and $2000$.
 \section{Results}
 \label{sec:results}
+All results were produced using a comsology with the following parameters $h =
+0.7,\,\,\,T_{\rm CMB 0} = 2.725,\,\,\,\Omega_{r0} = 5.046\cdot
+10^{-5},\,\,\,\Omega_{b0}=0.046,\,\,\,\Omega_{\rm CDM 0} =
+0.224,\,\,\,\Omega_{\Lambda 0} = 0.72995,\,\,\,\Omega_{k0} = \Omega_{\nu 0} =
+0$. When plotting the $C_\ell$ values for the temperature power spectrum our
+model produced the result illustrated in figure \ref{fig:cell}. In this figure
+we have inclued the Planck public release data 1 from 2013 to compare with our
+model. For the Planck data we have neglected corresponding error bars and
+uncerertainties in the data set as plotting this data is meant as a rough
+comparison to our model. The transfer function $\theta_\ell(k)$ is illustrated
+in figure \ref{fig:transfer}. Here we we chose to illustrate $/ell=200$ and
+$\ell=350$ as this approximately corresponds to the first peak and through of
+our temperature power spectrum. We also included $/ell=6$ and $\ell=1600$ to see
+the difference on vastly different scales. The spectrum integrand
+$\theta_\ell(k)^2/k$ is shown in figure \ref{fig:integrand} for the same
+multipole values as in figure \ref{fig:transfer} excluding $\ell=6$ as this had
+a significantly larger amplitude than the other multipole values.\\
+\begin{figure}
+    \includegraphics[scale=0.8]{figures/comparison.pdf}
+    \caption{The top figure shows the computed CMB temperature power-spectrum. The bottom figure shows the computed powerspectrum along with the planck public release data 1. For the planck data we have neglected error bars in the data set as this plot is just to roughly compare our computed spectrum with the measured power-spectrum.}
+    \label{fig:cell}
+\end{figure}
+\begin{figure}
+    \includegraphics[scale=0.8]{figures/transfer.pdf}
+    \caption{Figure showing the transfer function $\theta_\ell(k)$ for four different scales. The scales $/ell=200$ and
+    $\ell=350$ were chosen as they approximately corresponds to the first peak and through of
+    our temperature power spectrum. $/ell=6$ and $\ell=1600$ were chosen to
+    illustrate the difference between vastly different scales.}
+    \label{fig:transfer}
+\end{figure}
+\begin{figure}
+    \includegraphics[scale=0.8]{figures/integrand.pdf}
+    \caption{Figure showing the spectrum integrand$\theta_\ell(k)^2/k$ for three different scales.}
+    \label{fig:integrand}
+\end{figure}
 
+The matter power spectrum given in by equation (eq) is given in figure \ref{fig:matter}
+\begin{figure}
+    \includegraphics[scale=0.8]{figures/P.pdf}
+    \caption{Figure showing the matter power spectrum $P(k)$. Here $k_{peak}$ is plotted as this marks the extremal point in the matter power-spectrum denoting the turnover between supressed scales and non supressed scales.}
+    \label{fig:matter}
+\end{figure}
 
 \section{Discussion}\label{sec:discussion}
 
